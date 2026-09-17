@@ -1082,10 +1082,9 @@ function renderCategorias() {
       ? `<img src="${convertirUrlDrive(cat.icono_url)}" alt="${cat.nombre}" style="width:36px;height:36px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">`
       + `<span class="cat-emoji" style="display:none">${emoji}</span>`
       : `<span class="cat-emoji">${emoji}</span>`;
-    const tieneIcono = !!cat.icono_url;
-    return `<button class="cat-btn" data-id="${cat.id}" title="${cat.nombre}" onclick="filtrarCategoria('${cat.id}', this)">
+    return `<button class="cat-btn" data-id="${cat.id}" onclick="filtrarCategoria('${cat.id}', this)">
       ${icono}
-      ${!tieneIcono ? `<span>${cat.nombre}</span>` : ''}
+      <span>${cat.nombre}</span>
     </button>`;
   }).join('');
   wrap.innerHTML = `<button class="cat-btn activa" data-id="all" onclick="filtrarCategoria('all', this)">
