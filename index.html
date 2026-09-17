@@ -167,10 +167,10 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 8px 14px;
-    border-radius: 20px;
-    border: 1.5px solid var(--borde);
-    background: var(--blanco);
+    padding: 6px 10px;
+    border-radius: 16px;
+    border: none;
+    background: transparent;
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
@@ -182,9 +182,11 @@
 
   .cat-btn.activa, .cat-btn:hover {
     background: var(--verde-claro);
-    border-color: var(--verde);
+    border-color: transparent;
     color: var(--verde);
   }
+
+
 
   .cat-emoji { font-size: 1.2rem; }
 
@@ -1036,17 +1038,36 @@ let categoriaActiva = 'all';
 let busqueda   = '';
 
 async function cargarDatos() {
+  // Mostrar datos cacheados inmediatamente mientras carga la API
+  try {
+    const cache = localStorage.getItem('etv_cache');
+    if (cache) {
+      const cached = JSON.parse(cache);
+      categorias = cached.categorias;
+      productos  = cached.productos;
+      variantes  = cached.variantes;
+      renderCategorias();
+      renderProductos();
+    }
+  } catch(e) {}
+
+  // Luego actualizar desde la API en segundo plano
   try {
     const res  = await fetch(API_URL);
     const data = await res.json();
     categorias = data.categorias || DATA_CATEGORIAS;
     productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI');
     variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
+    try {
+      localStorage.setItem('etv_cache', JSON.stringify({categorias, productos, variantes}));
+    } catch(e) {}
   } catch(e) {
     console.warn('API no disponible, usando datos locales:', e.message);
-    categorias = DATA_CATEGORIAS;
-    productos  = DATA_PRODUCTOS.filter(p => p.activo === 'SI');
-    variantes  = DATA_VARIANTES.filter(v => v.activo === 'SI');
+    if (!categorias.length) {
+      categorias = DATA_CATEGORIAS;
+      productos  = DATA_PRODUCTOS.filter(p => p.activo === 'SI');
+      variantes  = DATA_VARIANTES.filter(v => v.activo === 'SI');
+    }
   }
   renderCategorias();
   renderProductos();
@@ -1061,13 +1082,14 @@ function renderCategorias() {
       ? `<img src="${convertirUrlDrive(cat.icono_url)}" alt="${cat.nombre}" style="width:36px;height:36px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">`
       + `<span class="cat-emoji" style="display:none">${emoji}</span>`
       : `<span class="cat-emoji">${emoji}</span>`;
-    return `<button class="cat-btn" data-id="${cat.id}" onclick="filtrarCategoria('${cat.id}', this)">
+    const tieneIcono = !!cat.icono_url;
+    return `<button class="cat-btn" data-id="${cat.id}" title="${cat.nombre}" onclick="filtrarCategoria('${cat.id}', this)">
       ${icono}
-      <span>${cat.nombre}</span>
+      ${!tieneIcono ? `<span>${cat.nombre}</span>` : ''}
     </button>`;
   }).join('');
   wrap.innerHTML = `<button class="cat-btn activa" data-id="all" onclick="filtrarCategoria('all', this)">
-    <span class="cat-emoji">🌿</span><span>Todo</span>
+    <span class="cat-emoji" style="font-size:2rem">🌿</span><span style="font-size:0.75rem">Todo</span>
   </button>` + extra;
 }
 
