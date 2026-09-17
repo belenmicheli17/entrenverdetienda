@@ -868,8 +868,8 @@ const EMOJI_PROD = {
   34:'🍬', 35:'🧈',
 };
 
-// ── DATOS EMBEBIDOS DESDE GOOGLE SHEETS ──
-// Última actualización: 17/09/2026 — para actualizar, pedile a Claude que sincronice el Sheets
+// ── API APPS SCRIPT ──
+const API_URL = 'https://script.google.com/macros/s/AKfycbyujL5dP7l3fKrkQJoeTKp-S31V5mdqfpjkeA5QCWgoQLGV7S48hs-zqmUv_WUjmPJXsQ/exec';
 
 const DATA_CATEGORIAS = [
   {id:1,  nombre:'Yerba mate',                  orden:1},
@@ -1017,14 +1017,26 @@ const DATA_VARIANTES = [
 ];
 
 // ── ESTADO ──
-let categorias = DATA_CATEGORIAS;
-let productos  = DATA_PRODUCTOS.filter(p => p.activo === 'SI');
-let variantes  = DATA_VARIANTES.filter(v => v.activo === 'SI');
+let categorias = [];
+let productos  = [];
+let variantes  = [];
 let carrito    = [];
 let categoriaActiva = 'all';
 let busqueda   = '';
 
-function cargarDatos() {
+async function cargarDatos() {
+  try {
+    const res  = await fetch(API_URL);
+    const data = await res.json();
+    categorias = data.categorias || DATA_CATEGORIAS;
+    productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI');
+    variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
+  } catch(e) {
+    console.warn('API no disponible, usando datos locales:', e.message);
+    categorias = DATA_CATEGORIAS;
+    productos  = DATA_PRODUCTOS.filter(p => p.activo === 'SI');
+    variantes  = DATA_VARIANTES.filter(v => v.activo === 'SI');
+  }
   renderCategorias();
   renderProductos();
 }
