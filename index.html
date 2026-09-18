@@ -177,6 +177,9 @@
     font-weight: 600;
     color: var(--texto);
     transition: background 0.15s;
+    position: sticky;
+    top: 64px; /* altura del header */
+    z-index: 99;
   }
   .hamburguesa-btn:hover { background: var(--verde-claro); }
   .hamburguesa-icon {
@@ -234,6 +237,9 @@
     border-bottom: 1px solid var(--borde);
     overflow-x: auto;
     scrollbar-width: none;
+    position: sticky;
+    top: 64px; /* altura del header */
+    z-index: 99;
   }
   .categorias-wrap::-webkit-scrollbar { display: none; }
 
@@ -756,38 +762,39 @@
       width: min(860px, 92vw);
       flex-direction: row;
       overflow-y: visible;
+      height: 520px;       /* altura fija — los hijos pueden usar height: 100% */
       max-height: 88vh;
       position: relative;
     }
     .modal-foto-wrap {
       width: 340px;
       flex-shrink: 0;
-      min-height: unset;
       border-radius: 20px 0 0 20px;
-      align-self: stretch;
+      height: 100%;        /* llena toda la altura del modal */
     }
     .modal-foto {
       width: 100%;
       height: 100%;
-      max-height: 100%;
       object-fit: contain;
-      padding: 24px;
+      padding: 32px;
+      display: block;
+    }
+    .modal-foto-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7rem;
+      padding: 0;
     }
     .modal-body {
       flex: 1;
       overflow-y: auto;
       border-radius: 0 20px 20px 0;
       padding: 52px 28px 28px 24px;
+      height: 100%;
     }
-    /* X se posiciona relativa al .modal completo, esquina derecha */
-    .modal-cerrar {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: var(--crema);
-      z-index: 10;
-    }
-    .modal-cerrar:hover { background: var(--borde); }
   }
 
   .modal-foto-wrap {
@@ -795,8 +802,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 200px;
-    height: 100%;
+    min-height: 220px;
     position: relative;
   }
 
@@ -810,6 +816,9 @@
   .modal-foto-placeholder {
     font-size: 5rem;
     padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .modal-cerrar {
@@ -819,7 +828,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.95);
     border: none;
     cursor: pointer;
     display: flex;
@@ -827,9 +836,13 @@
     justify-content: center;
     font-size: 1.1rem;
     transition: background 0.2s;
+    z-index: 10;
   }
 
-  .modal-cerrar:hover { background: white; }
+  .modal-cerrar:hover { background: var(--borde); }
+
+  /* En mobile el modal no tiene position:relative, se lo damos */
+  .modal { position: relative; }
 
   .modal-body {
     padding: 20px;
@@ -1061,7 +1074,7 @@
 
 <script>
 // ── CONFIGURACIÓN ──
-const WA_NUMBER = '549XXXXXXXXXX'; // Reemplazá con tu número
+const WA_NUMBER = '5491156385467'; // WhatsApp Argentina
 const ALIAS     = 'alias.aqui';    // Reemplazá con tu alias
 const TITULAR   = 'Nombre Titular';// Reemplazá con tu nombre
 
@@ -1455,10 +1468,10 @@ function abrirProducto(id) {
     : '';
 
   document.getElementById('modalContenido').innerHTML = `
+    <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
     <div class="modal-foto-wrap">
       ${fotoHtml}
       <div class="modal-foto-placeholder" style="display:${prod.foto_url?'none':'block'}">${emoji}</div>
-      <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
     </div>
     <div class="modal-body">
       ${prod.marca ? `<div class="modal-marca">${escHtml(prod.marca)}</div>` : ''}
