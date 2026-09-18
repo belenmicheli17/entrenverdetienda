@@ -282,6 +282,12 @@
     font-family: Georgia, serif;
     color: var(--texto);
     line-height: 1.3;
+    /* Siempre 2 renglones exactos — el espacio vacío se reserva si el texto es corto */
+    height: calc(1.05rem * 1.3 * 2);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .tarjeta-marca {
@@ -291,6 +297,11 @@
     color: var(--texto-suave);
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    /* Altura fija de 1 línea: las cards sin marca también reservan este espacio */
+    height: 1rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .variantes-lista {
@@ -401,6 +412,26 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+
+  .toast.visible {
+    pointer-events: auto;
+  }
+
+  .toast.visible:hover {
+    box-shadow: 0 10px 36px rgba(31,92,46,0.18);
+    transform: translateY(-2px);
+  }
+
+  .toast-ver-carrito {
+    font-size: 0.72rem;
+    color: var(--verde);
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
   }
 
   .toast.visible {
@@ -844,7 +875,7 @@
 </main>
 
 <!-- TOAST -->
-<div class="toast" id="toast">✓ Añadido al carrito</div>
+<div class="toast" id="toast" onclick="toastAbrirCarrito()">✓ Añadido al carrito</div>
 
 <!-- CARRITO OVERLAY -->
 <div class="carrito-overlay" id="carritoOverlay" onclick="toggleCarrito()"></div>
@@ -1204,7 +1235,7 @@ function renderTarjeta(prod) {
     ${foto}
     <div class="tarjeta-foto-placeholder" style="display:${prod.foto_url?'none':'flex'}">${emoji}</div>
     <div class="tarjeta-body">
-      ${prod.marca ? `<div class="tarjeta-marca">${escHtml(prod.marca)}</div>` : ''}
+      <div class="tarjeta-marca">${prod.marca ? escHtml(prod.marca) : ''}</div>
       <div class="tarjeta-nombre">${escHtml(prod.nombre)}</div>
       <div class="variantes-lista">${botonesVar}</div>
     </div>
@@ -1364,6 +1395,7 @@ function mostrarToast(msg) {
     <div class="toast-content">
       <span class="toast-titulo">Añadido al carrito</span>
       <span class="toast-nombre">${nombre}${variante ? ' · ' + variante : ''}</span>
+      <span class="toast-ver-carrito">Ver carrito →</span>
     </div>`;
   clearTimeout(toastTimer);
   clearTimeout(toastHideTimer);
@@ -1374,7 +1406,20 @@ function mostrarToast(msg) {
     t.classList.remove('visible');
     t.classList.add('hiding');
     toastHideTimer = setTimeout(() => t.classList.remove('hiding'), 300);
-  }, 2800);
+  }, 4200);
+}
+
+function toastAbrirCarrito() {
+  // Cerrar toast inmediatamente
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  clearTimeout(toastHideTimer);
+  t.classList.remove('visible');
+  t.classList.add('hiding');
+  toastHideTimer = setTimeout(() => t.classList.remove('hiding'), 300);
+  // Abrir carrito
+  const panel = document.getElementById('carritoPanel');
+  if (!panel.classList.contains('abierto')) toggleCarrito();
 }
 
 // ── INIT ──
