@@ -80,19 +80,6 @@
     .logo-desktop { display: block; }
   }
 
-  .logo-text {
-    font-family: 'Inter', sans-serif;
-    color: var(--crema);
-    font-size: 1.25rem;
-    font-weight: 600;
-    line-height: 1.2;
-    display: none;
-  }
-
-  @media (min-width: 480px) {
-    .logo-text { display: block; }
-  }
-
   .search-bar {
     flex: 1;
     max-width: 480px;
@@ -160,8 +147,6 @@
   }
 
   /* ── CATEGORÍAS ── */
-
-  /* Botón hamburguesa — solo mobile */
   .hamburguesa-btn {
     display: flex;
     align-items: center;
@@ -178,7 +163,7 @@
     color: var(--texto);
     transition: background 0.15s;
     position: sticky;
-    top: 64px; /* altura del header */
+    top: 64px;
     z-index: 99;
   }
   .hamburguesa-btn:hover { background: var(--verde-claro); }
@@ -207,7 +192,6 @@
     margin-left: auto;
   }
 
-  /* Dropdown categorías mobile */
   .cat-dropdown {
     display: none;
     flex-direction: column;
@@ -230,7 +214,6 @@
   .cat-dropdown .cat-btn:last-child { border-bottom: none; }
   .cat-dropdown .cat-btn.activa { background: var(--verde-claro); color: var(--verde); }
 
-  /* Barra horizontal — solo desktop */
   .categorias-wrap {
     display: none;
     background: var(--blanco);
@@ -238,7 +221,7 @@
     overflow-x: auto;
     scrollbar-width: none;
     position: sticky;
-    top: 64px; /* altura del header */
+    top: 64px;
     z-index: 99;
   }
   .categorias-wrap::-webkit-scrollbar { display: none; }
@@ -375,7 +358,6 @@
     font-family: Georgia, serif;
     color: var(--texto);
     line-height: 1.3;
-    /* Siempre 2 renglones exactos — el espacio vacío se reserva si el texto es corto */
     height: calc(1.05rem * 1.3 * 2);
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -390,7 +372,6 @@
     color: var(--texto-suave);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    /* Altura fija de 1 línea: las cards sin marca también reservan este espacio */
     height: 1rem;
     overflow: hidden;
     white-space: nowrap;
@@ -510,10 +491,7 @@
     transition: box-shadow 0.15s, transform 0.15s;
   }
 
-  .toast.visible {
-    pointer-events: auto;
-  }
-
+  .toast.visible { pointer-events: auto; }
   .toast.visible:hover {
     box-shadow: 0 10px 36px rgba(31,92,46,0.18);
     transform: translateY(-2px);
@@ -588,7 +566,7 @@
     right: -100%;
     width: min(420px, 100vw);
     height: 100vh;
-    height: 100dvh; /* en mobile descuenta la barra del navegador */
+    height: 100dvh;
     background: var(--blanco);
     z-index: 301;
     display: flex;
@@ -762,28 +740,29 @@
       width: min(860px, 92vw);
       flex-direction: row;
       overflow-y: visible;
-      height: 520px;       /* altura fija — los hijos pueden usar height: 100% */
+      height: 520px;
       max-height: 88vh;
       position: relative;
     }
-         .modal-foto-wrap {
+    .modal-foto-wrap {
       width: 340px;
       flex-shrink: 0;
       border-radius: 20px 0 0 20px;
       height: 100%;
-      background-color: #fff;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
+      background: #ffffff;     /* CAMBIO: fondo blanco */
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-        .modal-foto {
+    .modal-foto {
       width: 100%;
       height: 100%;
       max-height: none;
-      object-fit: cover;
-      object-position: center;
-      padding: 0;
+      object-fit: contain;     /* foto completa sin recorte */
+      padding: 8px;            /* CAMBIO: padding mínimo para foto grande */
       display: block;
+      background: #ffffff;
     }
     .modal-foto-placeholder {
       width: 100%;
@@ -793,6 +772,7 @@
       justify-content: center;
       font-size: 7rem;
       padding: 0;
+      background: #ffffff;
     }
     .modal-body {
       flex: 1;
@@ -804,7 +784,7 @@
   }
 
   .modal-foto-wrap {
-    background: var(--crema);
+    background: #ffffff;       /* CAMBIO: fondo blanco también en mobile */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -816,7 +796,8 @@
     width: 100%;
     max-height: 260px;
     object-fit: contain;
-    padding: 20px;
+    padding: 12px;             /* CAMBIO: menos padding en mobile */
+    background: #ffffff;
   }
 
   .modal-foto-placeholder {
@@ -825,6 +806,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background: #ffffff;
   }
 
   .modal-cerrar {
@@ -847,7 +829,6 @@
 
   .modal-cerrar:hover { background: var(--borde); }
 
-  /* En mobile el modal no tiene position:relative, se lo damos */
   .modal { position: relative; }
 
   .modal-body {
@@ -966,7 +947,6 @@
     color: var(--rojo);
   }
 
-  /* ── SECCIÓN ── */
   .seccion { margin-bottom: 32px; }
 </style>
 </head>
@@ -980,9 +960,9 @@
       <img class="logo-sol"
            src="https://drive.google.com/thumbnail?id=1BIcE3TqZ-jcNx0nZNVfwSqHXs_JoNL9s&sz=w200"
            alt="En Tren Verde">
-      <!-- Desktop: sol + texto -->
+      <!-- Desktop: logo completo ACTUALIZADO -->
       <img class="logo-desktop"
-           src="https://drive.google.com/thumbnail?id=16CfDqf6d8Zgp-a1TUqbDPy-aj3-_ZMa3&sz=w400"
+           src="https://drive.google.com/thumbnail?id=1JG4yvIGQwIdO1Di8TdpASeEFulNIIDL1&sz=w400"
            alt="En Tren Verde">
     </a>
 
@@ -1012,11 +992,9 @@
   Categorías
   <span class="hamburguesa-label-cat" id="hamburguesaLabel">Todas</span>
 </button>
-<div class="cat-dropdown" id="catDropdown">
-  <!-- se rellena con JS -->
-</div>
+<div class="cat-dropdown" id="catDropdown"></div>
 
-<!-- CATEGORÍAS DESKTOP (barra horizontal) -->
+<!-- CATEGORÍAS DESKTOP -->
 <div class="categorias-wrap">
   <div class="categorias-inner" id="categoriasInner">
     <button class="cat-btn activa" data-id="all" onclick="filtrarCategoria('all', this)">
@@ -1069,7 +1047,6 @@
       </svg>
       Enviar pedido por WhatsApp
     </a>
-    
   </div>
 </div>
 
@@ -1079,10 +1056,9 @@
 </div>
 
 <script>
-// ── CONFIGURACIÓN ──
-const WA_NUMBER = '5491156385467'; // WhatsApp Argentina
-const ALIAS     = 'alias.aqui';    // Reemplazá con tu alias
-const TITULAR   = 'Nombre Titular';// Reemplazá con tu nombre
+const WA_NUMBER = '5491156385467';
+const ALIAS     = 'alias.aqui';
+const TITULAR   = 'Nombre Titular';
 
 const EMOJIS_CAT = {
   'Yerba mate': '🧉',
@@ -1107,7 +1083,6 @@ const EMOJI_PROD = {
   34:'🍬', 35:'🧈',
 };
 
-// ── API APPS SCRIPT ──
 const API_URL = 'https://script.google.com/macros/s/AKfycbyujL5dP7l3fKrkQJoeTKp-S31V5mdqfpjkeA5QCWgoQLGV7S48hs-zqmUv_WUjmPJXsQ/exec';
 
 const DATA_CATEGORIAS = [
@@ -1264,7 +1239,6 @@ let categoriaActiva = 'all';
 let busqueda   = '';
 
 async function cargarDatos() {
-  // Mostrar datos cacheados inmediatamente mientras carga la API
   try {
     const cache = localStorage.getItem('etv_cache');
     if (cache) {
@@ -1277,7 +1251,6 @@ async function cargarDatos() {
     }
   } catch(e) {}
 
-  // Luego actualizar desde la API en segundo plano
   try {
     const res  = await fetch(API_URL);
     const data = await res.json();
@@ -1299,11 +1272,9 @@ async function cargarDatos() {
   renderProductos();
 }
 
-// ── RENDER CATEGORÍAS ──
 function renderCategorias() {
   const wrap = document.getElementById('categoriasInner');
   const dropdown = document.getElementById('catDropdown');
-  const EMOJIS_CAT_LOCAL = EMOJIS_CAT;
 
   const btnTodo = (esDropdown) => {
     if (esDropdown) return `<button class="cat-btn activa" data-id="all" onclick="filtrarCategoria('all', this, true)">
@@ -1315,7 +1286,7 @@ function renderCategorias() {
   };
 
   const botonesDesktop = categorias.map(cat => {
-    const emoji = EMOJIS_CAT_LOCAL[cat.nombre] || '📦';
+    const emoji = EMOJIS_CAT[cat.nombre] || '📦';
     const icono = cat.icono_url
       ? `<img src="${convertirUrlDrive(cat.icono_url)}" alt="${cat.nombre}" style="width:56px;height:56px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">`
         + `<span class="cat-emoji" style="display:none">${emoji}</span>`
@@ -1326,7 +1297,7 @@ function renderCategorias() {
   }).join('');
 
   const botonesDropdown = categorias.map(cat => {
-    const emoji = EMOJIS_CAT_LOCAL[cat.nombre] || '📦';
+    const emoji = EMOJIS_CAT[cat.nombre] || '📦';
     return `<button class="cat-btn" data-id="${cat.id}" onclick="filtrarCategoria('${cat.id}', this, true)">
       <span class="cat-emoji">${emoji}</span><span>${cat.nombre}</span>
     </button>`;
@@ -1344,15 +1315,11 @@ function toggleHamburguesa() {
   dd.classList.toggle('abierto', !abierto);
 }
 
-// ── FILTROS ──
 function filtrarCategoria(id, btn, esDropdown) {
   categoriaActiva = id;
-  // Marcar activo en ambas listas
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('activa'));
-  // Marcar el mismo data-id en ambos contenedores
   document.querySelectorAll(`.cat-btn[data-id="${id}"]`).forEach(b => b.classList.add('activa'));
 
-  // Actualizar label del hamburguesa
   const label = document.getElementById('hamburguesaLabel');
   if (label) {
     if (id === 'all') {
@@ -1363,7 +1330,6 @@ function filtrarCategoria(id, btn, esDropdown) {
     }
   }
 
-  // Cerrar dropdown si viene de mobile
   if (esDropdown) {
     document.getElementById('hamburguesaBtn').classList.remove('abierto');
     document.getElementById('catDropdown').classList.remove('abierto');
@@ -1377,7 +1343,6 @@ document.getElementById('buscador').addEventListener('input', e => {
   renderProductos();
 });
 
-// ── RENDER PRODUCTOS ──
 function renderProductos() {
   let prods = productos;
   if (categoriaActiva !== 'all') {
@@ -1450,7 +1415,6 @@ function renderTarjeta(prod) {
   </div>`;
 }
 
-// ── MODAL PRODUCTO ──
 function abrirProducto(id) {
   const prod = productos.find(p => String(p.id) === String(id));
   if (!prod) return;
@@ -1496,7 +1460,6 @@ function cerrarModalProducto() {
   document.body.style.overflow = '';
 }
 
-// ── CARRITO ──
 function agregarAlCarrito(prodId, label, precio, nombre) {
   const key = `${prodId}_${label}`;
   const idx = carrito.findIndex(i => i.key === key);
@@ -1546,13 +1509,12 @@ function actualizarCarrito() {
       </div>`).join('');
   }
 
-  // Armar mensaje WhatsApp
   const lineas = carrito.map(i => `• ${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`).join('\n');
   const msg = carrito.length
     ? `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n*Total: ${formatPrecio(total)}*\n\nAdjunto el comprobante de transferencia.`
     : 'Hola! Quisiera consultar sobre los productos.';
   const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-  document.getElementById('btnWhatsapp').href    = waUrl;
+  document.getElementById('btnWhatsapp').href = waUrl;
 }
 
 function toggleCarrito() {
@@ -1564,13 +1526,10 @@ function toggleCarrito() {
   document.body.style.overflow = abierto ? '' : 'hidden';
 }
 
-
-
 document.getElementById('modalProducto').addEventListener('click', e => {
   if (e.target === document.getElementById('modalProducto')) cerrarModalProducto();
 });
 
-// ── HELPERS ──
 function parsePrecio(val) {
   if (typeof val === 'number') return val;
   return parseInt(String(val).replace(/[^0-9]/g, ''), 10) || 0;
@@ -1618,22 +1577,18 @@ function mostrarToast(msg) {
 }
 
 function toastAbrirCarrito() {
-  // Cerrar toast inmediatamente
   const t = document.getElementById('toast');
   clearTimeout(toastTimer);
   clearTimeout(toastHideTimer);
   t.classList.remove('visible');
   t.classList.add('hiding');
   toastHideTimer = setTimeout(() => t.classList.remove('hiding'), 300);
-  // Cerrar modal de producto si está abierto
   const modal = document.getElementById('modalProducto');
   if (modal.classList.contains('abierto')) cerrarModalProducto();
-  // Abrir carrito
   const panel = document.getElementById('carritoPanel');
   if (!panel.classList.contains('abierto')) toggleCarrito();
 }
 
-// ── INIT ──
 cargarDatos();
 </script>
 </body>
