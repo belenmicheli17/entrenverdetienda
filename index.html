@@ -338,6 +338,7 @@
     border: 2.5px solid var(--verde);
     background: var(--verde-claro);
     transform: scale(0.98);
+    transition: transform 0s, border 0s, background 0s;
   }
 
   .variante-btn.oferta {
@@ -760,6 +761,13 @@
   .modal-variante-btn:hover {
     border-color: var(--mostaza);
     background: #FFF8E8;
+  }
+
+  .modal-variante-btn:active {
+    border: 2.5px solid var(--verde);
+    background: var(--verde-claro);
+    transform: scale(0.98);
+    transition: transform 0s, border 0s, background 0s;
   }
 
   .mv-label { font-size: 0.85rem; color: var(--texto-suave); }
@@ -1252,7 +1260,7 @@ function abrirProducto(id) {
   const botonesVar = vars.map(v => {
     const precio = parsePrecio(v.precio);
     return `<button class="modal-variante-btn"
-      onclick="agregarAlCarrito(${prod.id}, '${escHtml(v.cantidad_label)}', ${precio}, '${escHtml(prod.nombre)}');cerrarModalProducto()">
+      onclick="agregarAlCarrito(${prod.id}, '${escHtml(v.cantidad_label)}', ${precio}, '${escHtml(prod.nombre)}')">
       <div style="display:flex;flex-direction:column;align-items:flex-start;">
         <span class="mv-label">${escHtml(v.cantidad_label)}</span>
         <span class="mv-precio">${formatPrecio(precio)}</span>
@@ -1417,6 +1425,9 @@ function toastAbrirCarrito() {
   t.classList.remove('visible');
   t.classList.add('hiding');
   toastHideTimer = setTimeout(() => t.classList.remove('hiding'), 300);
+  // Cerrar modal de producto si está abierto
+  const modal = document.getElementById('modalProducto');
+  if (modal.classList.contains('abierto')) cerrarModalProducto();
   // Abrir carrito
   const panel = document.getElementById('carritoPanel');
   if (!panel.classList.contains('abierto')) toggleCarrito();
