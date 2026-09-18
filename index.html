@@ -662,6 +662,37 @@
     .modal { border-radius: 20px; max-height: 85vh; }
   }
 
+  /* ── DOS COLUMNAS en desktop ── */
+  @media (min-width: 700px) {
+    .modal {
+      width: min(860px, 92vw);
+      flex-direction: row;
+      overflow-y: visible;
+      max-height: 88vh;
+    }
+    .modal-foto-wrap {
+      width: 340px;
+      flex-shrink: 0;
+      min-height: unset;
+      border-radius: 20px 0 0 20px;
+      align-self: stretch;
+    }
+    .modal-foto {
+      max-height: 100%;
+    }
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      border-radius: 0 20px 20px 0;
+      padding: 28px 28px 28px 24px;
+    }
+    /* X pasa a la esquina del modal completo */
+    .modal-cerrar {
+      top: 12px;
+      right: 12px;
+    }
+  }
+
   .modal-foto-wrap {
     background: var(--crema);
     display: flex;
