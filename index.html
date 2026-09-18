@@ -297,6 +297,7 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
+    width: 100%;
   }
 
   .variante-btn {
@@ -360,8 +361,8 @@
     flex: 1;
   }
 
-  .variante-label { font-size: 0.85rem; font-family: 'Inter', sans-serif; font-weight: 500; color: var(--texto-suave); }
-  .variante-precio { font-size: 0.95rem; font-weight: 700; font-family: 'Inter', sans-serif; color: var(--verde); }
+  .variante-label { font-size: 0.82rem; font-family: 'Inter', sans-serif; font-weight: 500; color: var(--texto-suave); text-align: left; }
+  .variante-precio { font-size: 0.95rem; font-weight: 700; font-family: 'Inter', sans-serif; color: var(--verde); text-align: left; }
 
   .badge-oferta {
     font-size: 0.6rem;
@@ -373,6 +374,15 @@
   }
 
   /* ── TOAST ── */
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(20px); }
+  }
+
   .toast {
     position: fixed;
     bottom: 32px;
@@ -385,9 +395,7 @@
     max-width: 320px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.15);
     opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 200;
+    z-index: 9999;
     pointer-events: none;
     display: flex;
     align-items: center;
@@ -395,8 +403,11 @@
   }
 
   .toast.visible {
-    opacity: 1;
-    transform: translateY(0);
+    animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .toast.hiding {
+    animation: toastOut 0.3s ease forwards;
   }
 
   .toast-icon {
@@ -855,7 +866,7 @@
   </div>
   <div class="carrito-footer">
     <div class="total-row">
-      <span class="total-label">Total</span>
+      <span class="total-label">Total estimado</span>
       <span class="total-monto" id="totalMonto">$0</span>
     </div>
     <a class="btn-whatsapp" id="btnWhatsapp" href="#" target="_blank">
@@ -1302,7 +1313,6 @@ function actualizarCarrito() {
     : 'Hola! Quisiera consultar sobre los productos.';
   const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
   document.getElementById('btnWhatsapp').href    = waUrl;
-  document.getElementById('btnWhatsappPago').href = waUrl;
 }
 
 function toggleCarrito() {
@@ -1342,7 +1352,7 @@ function convertirUrlDrive(url) {
   return url;
 }
 
-let toastTimer;
+let toastTimer, toastHideTimer;
 function mostrarToast(msg) {
   const t = document.getElementById('toast');
   const partes = msg.replace('✓ ', '').split(' (');
@@ -1354,11 +1364,16 @@ function mostrarToast(msg) {
       <span class="toast-titulo">Añadido al carrito</span>
       <span class="toast-nombre">${nombre}${variante ? ' · ' + variante : ''}</span>
     </div>`;
-  t.classList.remove('visible');
+  clearTimeout(toastTimer);
+  clearTimeout(toastHideTimer);
+  t.classList.remove('visible', 'hiding');
   void t.offsetWidth;
   t.classList.add('visible');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('visible'), 2800);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('visible');
+    t.classList.add('hiding');
+    toastHideTimer = setTimeout(() => t.classList.remove('hiding'), 300);
+  }, 2800);
 }
 
 // ── INIT ──
