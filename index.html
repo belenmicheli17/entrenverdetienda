@@ -1276,14 +1276,7 @@ function renderCategorias() {
   const wrap = document.getElementById('categoriasInner');
   const dropdown = document.getElementById('catDropdown');
 
-  const btnTodo = (esDropdown) => {
-    if (esDropdown) return `<button class="cat-btn activa" data-id="all" onclick="filtrarCategoria('all', this, true)">
-      <span class="cat-emoji">🌿</span><span>Todas las categorías</span>
-    </button>`;
-    return `<button class="cat-btn activa" data-id="all" onclick="filtrarCategoria('all', this)">
-      <span class="cat-emoji" style="font-size:2rem">🌿</span><span style="font-size:0.75rem">Todo</span>
-    </button>`;
-  };
+  
 
   const botonesDesktop = categorias.map(cat => {
     const emoji = EMOJIS_CAT[cat.nombre] || '📦';
@@ -1296,10 +1289,14 @@ function renderCategorias() {
     </button>`;
   }).join('');
 
-  const botonesDropdown = categorias.map(cat => {
+   const botonesDropdown = categorias.map(cat => {
     const emoji = EMOJIS_CAT[cat.nombre] || '📦';
+    const icono = cat.icono_url
+      ? `<img src="${convertirUrlDrive(cat.icono_url)}" alt="${cat.nombre}" style="width:32px;height:32px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">`
+        + `<span class="cat-emoji" style="display:none">${emoji}</span>`
+      : `<span class="cat-emoji">${emoji}</span>`;
     return `<button class="cat-btn" data-id="${cat.id}" onclick="filtrarCategoria('${cat.id}', this, true)">
-      <span class="cat-emoji">${emoji}</span><span>${cat.nombre}</span>
+      ${icono}<span>${cat.nombre}</span>
     </button>`;
   }).join('');
 
