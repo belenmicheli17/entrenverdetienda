@@ -1300,9 +1300,8 @@ function renderCategorias() {
     </button>`;
   }).join('');
 
-  wrap.innerHTML = btnTodo(false) + botonesDesktop;
-  dropdown.innerHTML = btnTodo(true) + botonesDropdown;
-}
+   wrap.innerHTML = botonesDesktop;
+  dropdown.innerHTML = botonesDropdown;
 
 function toggleHamburguesa() {
   const btn = document.getElementById('hamburguesaBtn');
