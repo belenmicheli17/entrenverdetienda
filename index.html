@@ -278,6 +278,12 @@
     font-family: Georgia, serif;
     font-size: 1.7rem;
     font-weight: 700;
+    color: var(--verde);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--mostaza);
+    display: inline-block;
+  }
 
   /* ── GRILLA ── */
   .grilla {
@@ -1276,7 +1282,7 @@ function renderCategorias() {
   const botonesDesktop = categorias.map(cat => {
     const emoji = EMOJIS_CAT[cat.nombre] || '📦';
     const icono = cat.icono_url
-      ? `<img src="${convertirUrlDrive(cat.icono_url)}" alt="${cat.nombre}" style="width:56px;height:56px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">`
+      ? `<img src="${convertirUrlDrive(cat.icono_url)}" alt="${cat.nombre}" style="width:40px;height:40px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">`
         + `<span class="cat-emoji" style="display:none">${emoji}</span>`
       : `<span class="cat-emoji">${emoji}</span>`;
     return `<button class="cat-btn" data-id="${cat.id}" onclick="filtrarCategoria('${cat.id}', this)">
