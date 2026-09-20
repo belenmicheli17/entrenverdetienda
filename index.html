@@ -32,12 +32,69 @@
     color: var(--texto);
     min-height: 100vh;
   }
+/* ── TICKER ── */
+.ticker-wrap {
+  background: var(--mostaza);
+  overflow: hidden;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 101;
+}
 
+.ticker-track {
+  display: flex;
+  white-space: nowrap;
+  animation: ticker 28s linear infinite;
+}
+
+.ticker-track:hover { animation-play-state: paused; }
+
+.ticker-item {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--verde);
+  padding: 0 48px;
+  letter-spacing: 0.02em;
+}
+
+.ticker-sep {
+  color: var(--verde);
+  opacity: 0.4;
+  font-size: 0.9rem;
+  align-self: center;
+}
+
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item">🚚 Entrega gratis a CABA y GBA (1er y 2do cordón) en compras mayores a $35.000.-</span>
+    <span class="ticker-sep">✦</span>
+    <span class="ticker-item">3er cordón GBA: se paga extra de $3.200.-</span>
+    <span class="ticker-sep">✦</span>
+    <span class="ticker-item">Precios para AMBA · Efectivo o transferencia</span>
+    <span class="ticker-sep">✦</span>
+    <span class="ticker-item">🚚 Entrega gratis a CABA y GBA (1er y 2do cordón) en compras mayores a $35.000.-</span>
+    <span class="ticker-sep">✦</span>
+    <span class="ticker-item">3er cordón GBA: se paga extra de $3.200.-</span>
+    <span class="ticker-sep">✦</span>
+    <span class="ticker-item">Precios para AMBA · Efectivo o transferencia</span>
+    <span class="ticker-sep">✦</span>
+  </div>
+</div>
+  
   /* ── HEADER ── */
   header {
     background: var(--verde);
     position: sticky;
-    top: 0;
+    top: 34;
     z-index: 100;
     box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   }
@@ -162,8 +219,8 @@
     font-weight: 600;
     color: var(--texto);
     transition: background 0.15s;
-    position: sticky;
-    top: 64px;
+       position: sticky;
+    top: 98px;
     z-index: 99;
   }
   .hamburguesa-btn:hover { background: var(--verde-claro); }
@@ -221,7 +278,7 @@
     overflow-x: auto;
     scrollbar-width: none;
     position: sticky;
-    top: 64px;
+    top: 98px;
     z-index: 99;
   }
   .categorias-wrap::-webkit-scrollbar { display: none; }
@@ -1061,7 +1118,7 @@
   </div>
   <div class="carrito-footer">
     <div class="total-row">
-      <span class="total-label">Total estimado</span>
+      <span class="total-label">Total</span>
       <span class="total-monto" id="totalMonto">$0</span>
     </div>
     <a class="btn-whatsapp" id="btnWhatsapp" href="#" target="_blank">
@@ -1537,7 +1594,7 @@ function actualizarCarrito() {
 
   const lineas = carrito.map(i => `• ${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`).join('\n');
   const msg = carrito.length
-    ? `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n*Total: ${formatPrecio(total)}*\n\nAdjunto el comprobante de transferencia.`
+    ? `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n*Total: ${formatPrecio(total)}*\n\nEspero confirmación y datos para la transferencia.`
     : 'Hola! Quisiera consultar sobre los productos.';
   const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
   document.getElementById('btnWhatsapp').href = waUrl;
