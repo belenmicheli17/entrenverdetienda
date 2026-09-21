@@ -511,11 +511,11 @@
   .variante-precio { font-size: 0.95rem; font-weight: 700; font-family: 'Inter', sans-serif; color: var(--verde); text-align: left; }
 
 .badge-sin-stock {
-  font-size: 1.1rem;
-  background: #666;
+  font-size: 0.85rem;
+  background: #888;
   color: white;
-  padding: 4px 12px;
-  border-radius: 6px;
+  padding: 3px 10px;
+  border-radius: 12px;
   font-weight: 800;
 }
 
@@ -523,12 +523,12 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  background: #666;
+  background: #888;
   color: white;
-  font-size: 1.4rem;
+  font-size: 1rem;
   font-weight: 800;
-  padding: 6px 14px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 12px;
   font-family: 'Inter', sans-serif;
   letter-spacing: 0.03em;
 }
@@ -1561,7 +1561,7 @@ function renderTarjeta(prod) {
     </button>`;
   }).join('');
 
-    return `<div class="tarjeta" onclick="abrirProducto(${prod.id})">
+      return `<div class="tarjeta" onclick="abrirProducto(${prod.id})" style="${sinStock ? 'border-left-color:#aaa;' : ''}">
     <div style="position:relative;">
       ${foto}
       <div class="tarjeta-foto-placeholder" style="display:${prod.foto_url?'none':'flex'}">${emoji}</div>
