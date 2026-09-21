@@ -1673,7 +1673,7 @@ function actualizarCarrito() {
 
   const lineas = carrito.map(i => `• ${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`).join('\n');
   const msg = carrito.length
-    ? `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n*Total: ${formatPrecio(total)}*\n\nEspero confirmación y datos para la transferencia.`
+    ? `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n*Total: ${formatPrecio(total)}*\n\nEspero confirmación.`
     : 'Hola! Quisiera consultar sobre los productos.';
   const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
 const btnWa = document.getElementById('btnWhatsapp');
