@@ -510,6 +510,41 @@
   .variante-label { font-size: 0.82rem; font-family: 'Inter', sans-serif; font-weight: 500; color: var(--texto-suave); text-align: left; }
   .variante-precio { font-size: 0.95rem; font-weight: 700; font-family: 'Inter', sans-serif; color: var(--verde); text-align: left; }
 
+.badge-sin-stock {
+  font-size: 0.6rem;
+  background: #999;
+  color: white;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.badge-sin-stock-foto {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #999;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.03em;
+}
+
+.variante-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.modal-variante-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+  
   .badge-oferta {
     font-size: 0.6rem;
     background: var(--rojo);
@@ -1494,10 +1529,12 @@ function renderTarjeta(prod) {
     ? `<img class="tarjeta-foto" src="${convertirUrlDrive(prod.foto_url)}" alt="${prod.nombre}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
     : '';
 
+  const sinStock = String(prod.stock).toUpperCase() === 'NO';
   const botonesVar = vars.map(v => {
     const precio = parsePrecio(v.precio);
     const esOferta = v.oferta_semana?.toString().toUpperCase() === 'SI';
     return `<button class="variante-btn${esOferta?' oferta':''}"
+      ${sinStock ? 'disabled' : ''}
       onclick="event.stopPropagation();agregarAlCarrito(${prod.id}, '${escHtml(v.cantidad_label)}', ${precio}, '${escHtml(prod.nombre)}')">
       <div class="plus">+</div>
       <div class="variante-info">
@@ -1508,9 +1545,12 @@ function renderTarjeta(prod) {
     </button>`;
   }).join('');
 
-  return `<div class="tarjeta" onclick="abrirProducto(${prod.id})">
-    ${foto}
-    <div class="tarjeta-foto-placeholder" style="display:${prod.foto_url?'none':'flex'}">${emoji}</div>
+    return `<div class="tarjeta" onclick="abrirProducto(${prod.id})">
+    <div style="position:relative;">
+      ${foto}
+      <div class="tarjeta-foto-placeholder" style="display:${prod.foto_url?'none':'flex'}">${emoji}</div>
+      ${sinStock ? '<span class="badge-sin-stock-foto">Sin stock</span>' : ''}
+    </div>
     <div class="tarjeta-body">
       <div class="tarjeta-marca">${prod.marca ? escHtml(prod.marca) : ''}</div>
       <div class="tarjeta-nombre">${escHtml(prod.nombre)}</div>
@@ -1525,9 +1565,11 @@ function abrirProducto(id) {
   const vars  = variantes.filter(v => String(v.producto_id) === String(id));
   const emoji = EMOJI_PROD[id] || '📦';
 
+ const sinStock = String(prod.stock).toUpperCase() === 'NO';
   const botonesVar = vars.map(v => {
     const precio = parsePrecio(v.precio);
     return `<button class="modal-variante-btn"
+      ${sinStock ? 'disabled' : ''}
       onclick="agregarAlCarrito(${prod.id}, '${escHtml(v.cantidad_label)}', ${precio}, '${escHtml(prod.nombre)}')">
       <div style="display:flex;flex-direction:column;align-items:flex-start;">
         <span class="mv-label">${escHtml(v.cantidad_label)}</span>
@@ -1551,7 +1593,7 @@ function abrirProducto(id) {
       ${prod.marca ? `<div class="modal-marca">${escHtml(prod.marca)}</div>` : ''}
       <h2 class="modal-nombre">${escHtml(prod.nombre)}</h2>
       ${prod.descripcion ? `<p class="modal-desc">${escHtml(prod.descripcion)}</p>` : ''}
-      <div class="modal-variantes-titulo">Elegí la cantidad:</div>
+      <div class="modal-variantes-titulo">Elegí la cantidad: ${sinStock ? '<span class="badge-sin-stock">Sin stock</span>' : ''}</div>
       <div class="modal-variantes">${botonesVar}</div>
     </div>`;
 
