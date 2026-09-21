@@ -55,11 +55,11 @@
 @media (min-width: 700px) {
   .ticker-track {
     animation: none;
-    justify-content: center;
     width: 100%;
+    justify-content: center;
+    gap: 0;
   }
-  .ticker-item:nth-child(n+5),
-  .ticker-sep:nth-child(n+5) {
+  .ticker-track > *:nth-child(n+7) {
     display: none;
   }
 }
@@ -271,8 +271,7 @@
     border-bottom: 1px solid var(--borde);
     overflow-x: auto;
     scrollbar-width: none;
-    position: sticky;
-    top: 98px;
+    position: static;
     z-index: 99;
   }
   .categorias-wrap::-webkit-scrollbar { display: none; }
