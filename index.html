@@ -52,6 +52,13 @@
 
 .ticker-track:hover { animation-play-state: paused; }
 
+@media (min-width: 700px) {
+  .ticker-track {
+    animation: none;
+    justify-content: center;
+    width: 100%;
+  }
+}
 .ticker-item {
   font-family: 'Inter', sans-serif;
   font-size: 0.78rem;
@@ -294,7 +301,13 @@
     color: var(--texto-suave);
     font-weight: 600;
   }
-
+  @media (max-width: 699px) {
+  .cat-btn {
+    white-space: nowrap;
+    max-width: none;
+    text-align: left;
+  }
+ }
   .cat-btn.activa, .cat-btn:hover {
     background: var(--verde-claro);
     border-color: transparent;
