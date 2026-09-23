@@ -1111,6 +1111,18 @@
     transform: scale(1.1);
     box-shadow: 0 6px 24px rgba(37,211,102,0.4);
   }
+  .btn-vaciar {
+    background: none;
+    border: none;
+    color: var(--texto-suave);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 6px;
+    text-decoration: underline;
+  }
+  .btn-vaciar:hover { color: var(--rojo); }
+  
 </style>
 </head>
 <body>
@@ -1229,6 +1241,7 @@
       </svg>
       Enviar pedido por WhatsApp
     </a>
+        <button class="btn-vaciar" id="btnVaciar" onclick="vaciarCarrito()" style="display:none">Vaciar carrito</button>
   </div>
 </div>
 
@@ -1552,7 +1565,7 @@ function actualizarCarrito() {
   const badge = document.getElementById('cartBadge');
   badge.textContent = count;
   badge.style.display = count > 0 ? 'flex' : 'none';
-
+  document.getElementById('btnVaciar').style.display = count > 0 ? 'block' : 'none';
   document.getElementById('totalMonto').textContent = formatPrecio(total);
 
   const itemsEl = document.getElementById('carritoItems');
@@ -1586,6 +1599,12 @@ btnWa.onclick = function(e) {
 };
 }
 
+function vaciarCarrito() {
+  if (!confirm('¿Querés vaciar el carrito?')) return;
+  carrito = [];
+  actualizarCarrito();
+}
+  
 function toggleCarrito() {
   const panel   = document.getElementById('carritoPanel');
   const overlay = document.getElementById('carritoOverlay');
