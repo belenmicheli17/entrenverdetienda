@@ -1193,6 +1193,13 @@
   .selector.abierto .selector-lista { display: flex; }
   .envio-box.error .selector-btn, .pago-box.error .selector-btn { border-color: var(--rojo); }
   .zona-sug.activa { background: var(--verde-claro); }
+    .aviso-gratis {
+    background: #FFF8E8; border: 1.5px solid var(--mostaza); border-radius: 10px;
+    padding: 10px 12px; font-size: 0.95rem; color: var(--texto);
+  }
+  .aviso-gratis strong { color: var(--verde); }
+  .aviso-barra { height: 6px; background: var(--borde); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .aviso-barra span { display: block; height: 100%; background: var(--verde); border-radius: 3px; transition: width 0.3s; }
 </style>
 </head>
 <body>
@@ -1314,7 +1321,7 @@
       <div class="envio-titulo">¿Cómo vas a pagar?</div>
            <div id="pagoSelector"></div>
     </div>
-    <div class="envio-row" id="envioRow" style="display:none">
+    <div class="aviso-gratis" id="avisoGratis" style="display:none"></div>
       <span>Envío</span><span id="envioMonto"></span>
     </div>
     <div class="total-row">
@@ -1683,7 +1690,7 @@ function actualizarCarrito() {
   }
   document.getElementById('totalMonto').textContent = formatPrecio(subtotal + (envio ? envio.monto : 0));
   if (tipoEnvio === 'moto') renderZonaResultado(subtotal);
-
+  if (tipoEnvio === 'moto') renderZonaResultado(subtotal);
   const itemsEl = document.getElementById('carritoItems');
   if (carrito.length === 0) {
     itemsEl.innerHTML = `<div class="carrito-vacio"><span style="font-size:2.5rem">🛒</span><p>Tu carrito está vacío</p></div>`;
@@ -1857,7 +1864,7 @@ function renderZonaResultado(subtotal) {
   const nombre = env.nombreNivel ? escHtml(env.nombreNivel) : 'Envío a coordinar';
   const precio = env.nombreNivel ? (env.esGratis ? 'Gratis 🎉' : env.texto) : '';
   let html = `<div class="zona-res-fila"><span>${nombre}</span><span>${precio}</span></div>`;
-  if (env.gratis && !env.esGratis) {
+
     html += `<span class="zona-falta">Te faltan ${formatPrecio(env.gratis - subtotal)} para el envío gratis</span>`;
   }
   el.innerHTML = `<div class="zona-resultado">${html}</div>`;
