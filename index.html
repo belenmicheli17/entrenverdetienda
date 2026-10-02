@@ -1159,13 +1159,23 @@
   .zona-sug:hover { background: var(--verde-claro); }
   .zona-resultado {
     margin-top: 6px; padding: 8px 10px; background: var(--verde-claro); border-radius: 8px;
-    color: var(--verde); font-weight: 600; font-size: 0.82rem;
+    color: var(--verde); font-weight: 600; font-size: 0.95rem;
   }
   .zona-resultado.zona-no { background: var(--crema); color: var(--texto-suave); font-weight: 500; }
   .zona-falta { display: block; margin-top: 2px; font-weight: 500; color: var(--texto-suave); }
-  .envio-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--texto-suave); }
+  .envio-row { display: flex; justify-content: space-between; font-size: 1.05rem; color: var(--texto-suave); }
   .btn-whatsapp.deshabilitado { opacity: 0.5; }
-  
+
+  .zona-buscador select {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 16px; background: var(--blanco);
+    color: var(--texto); outline: none; cursor: pointer;
+  }
+  .zona-buscador select:focus { border-color: var(--verde); }
+
+    .pago-box { display: flex; flex-direction: column; gap: 8px; }
+  .pago-box.error .envio-titulo { color: var(--rojo); }
+  .pago-box.error select { border-color: var(--rojo); }
 </style>
 </head>
 <body>
@@ -1283,6 +1293,16 @@
       </div>
       <div class="envio-detalle" id="envioDetalle"></div>
     </div>
+        <div class="pago-box" id="pagoBox" style="display:none">
+      <div class="envio-titulo">¿Cómo vas a pagar?</div>
+      <div class="zona-buscador">
+        <select id="pagoSelect" onchange="elegirPago(this.value)">
+          <option value="">💳 Elegí el medio de pago</option>
+          <option value="Efectivo">Efectivo</option>
+          <option value="Transferencia">Transferencia</option>
+        </select>
+      </div>
+    </div>
     <div class="envio-row" id="envioRow" style="display:none">
       <span>Envío</span><span id="envioMonto"></span>
     </div>
@@ -1321,7 +1341,7 @@
 const WA_NUMBER = '5491156385467';
 const ALIAS     = 'alias.aqui';
 const TITULAR   = 'Nombre Titular';
-
+const PUNTOS_RETIRO = ['Caballito', 'Palermo', 'Castelar'];
 const EMOJIS_CAT = {
   'Yerba mate': '🧉',
   'Aceites de Oliva': '🫒',
@@ -1378,6 +1398,10 @@ let tipoEnvio  = '';
 let zonaSel    = null;
 let zonaManual = '';
 let sugerenciasActuales = [];
+  let puntoRetiro = '';
+  let sugIndex = -1;
+  let medioPago = '';
+         
   
 async function cargarDatos() {
   try {
@@ -1637,7 +1661,7 @@ function actualizarCarrito() {
   badge.style.display = count > 0 ? 'flex' : 'none';
   document.getElementById('btnVaciar').style.display = count > 0 ? 'flex' : 'none';
   document.getElementById('envioBox').style.display  = count > 0 ? 'flex' : 'none';
-
+  document.getElementById('pagoBox').style.display   = count > 0 ? 'flex' : 'none';
   const envio = calcularEnvio(subtotal);
   const envioRow = document.getElementById('envioRow');
   if (envio && count > 0) {
@@ -1669,7 +1693,7 @@ function actualizarCarrito() {
   }
 
   const btnWa = document.getElementById('btnWhatsapp');
-  btnWa.classList.toggle('deshabilitado', count > 0 && !envioListo());
+  btnWa.classList.toggle('deshabilitado', count > 0 && (!envioListo() || !medioPago));
   btnWa.onclick = function(e) {
     e.preventDefault();
     enviarPedido();
@@ -1686,14 +1710,15 @@ function nombreZona(z) {
 }
 
 function envioListo() {
-  if (tipoEnvio === 'retiro' || tipoEnvio === 'correo') return true;
+  if (tipoEnvio === 'retiro') return !!puntoRetiro;
+  if (tipoEnvio === 'correo') return true;
   if (tipoEnvio === 'moto') return !!(zonaSel || zonaManual);
   return false;
 }
 
 function calcularEnvio(subtotal) {
   if (tipoEnvio === 'retiro') {
-    return { monto: 0, texto: 'Sin costo', detalle: 'Retiro por Caballito, Palermo o Castelar (coordinamos el día)' };
+    return { monto: 0, texto: 'Sin costo', detalle: `Retiro por ${puntoRetiro || 'a definir'} (coordinamos el día)` };
   }
   if (tipoEnvio === 'correo') {
     return { monto: 0, texto: 'A coordinar', detalle: 'Envío por correo (a cotizar)' };
@@ -1708,7 +1733,7 @@ function calcularEnvio(subtotal) {
       return {
         monto: esGratis ? 0 : precio,
         texto: esGratis ? 'Gratis' : formatPrecio(precio),
-        detalle: `Envío a ${nombreZona(zonaSel)} · ${env.nombre}`,
+        detalle: `Envío a ${nombreZona(zonaSel)}`,
         nombreNivel: env.nombre, gratis, esGratis
       };
     }
@@ -1723,13 +1748,21 @@ function elegirEnvio(tipo) {
   tipoEnvio = tipo;
   zonaSel = null;
   zonaManual = '';
+  puntoRetiro = '';
   sugerenciasActuales = [];
   document.querySelectorAll('.envio-opcion').forEach(b => b.classList.toggle('activa', b.dataset.tipo === tipo));
   document.getElementById('envioBox').classList.remove('error');
 
   const detalle = document.getElementById('envioDetalle');
   if (tipo === 'retiro') {
-    detalle.innerHTML = '📍 Retirás por Caballito, Palermo o Castelar. Coordinamos el día por WhatsApp.';
+    detalle.innerHTML = `
+      <div class="zona-buscador">
+        <select id="retiroSelect" onchange="elegirRetiro(this.value)">
+          <option value="">📍 Elegí dónde retirar</option>
+          ${PUNTOS_RETIRO.map(p => `<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('')}
+        </select>
+      </div>
+      <div style="margin-top:6px">Coordinamos el día por WhatsApp.</div>`;
   } else if (tipo === 'correo') {
     detalle.innerHTML = '📦 Para envíos fuera de AMBA. El costo se cotiza según tu destino y lo coordinamos por WhatsApp.';
   } else {
@@ -1740,6 +1773,12 @@ function elegirEnvio(tipo) {
         <div id="zonaResultado"></div>
       </div>`;
   }
+  actualizarCarrito();
+}
+
+function elegirRetiro(valor) {
+  puntoRetiro = valor;
+  document.getElementById('envioBox').classList.remove('error');
   actualizarCarrito();
 }
 
@@ -1787,13 +1826,17 @@ function renderZonaResultado(subtotal) {
   if (!el) return;
   if (!zonaSel) { el.innerHTML = ''; return; }
   const env = calcularEnvio(subtotal);
-  let html = env.nombreNivel
-    ? `${escHtml(env.nombreNivel)} · ${env.esGratis ? 'Envío gratis 🎉' : 'Envío ' + env.texto}`
-    : 'Envío a coordinar';
+   let html = env.nombreNivel ? escHtml(env.nombreNivel) : 'Envío a coordinar';
   if (env.gratis && !env.esGratis) {
     html += `<span class="zona-falta">Te faltan ${formatPrecio(env.gratis - subtotal)} para el envío gratis</span>`;
   }
   el.innerHTML = `<div class="zona-resultado">${html}</div>`;
+}
+
+function elegirPago(valor) {
+  medioPago = valor;
+  document.getElementById('pagoBox').classList.remove('error');
+  actualizarCarrito();
 }
 
 function enviarPedido() {
@@ -1801,10 +1844,13 @@ function enviarPedido() {
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola! Quisiera consultar sobre los productos.')}`, '_blank');
     return;
   }
-  if (!envioListo()) {
-    const box = document.getElementById('envioBox');
-    box.classList.add('error');
-    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const faltaEnvio = !envioListo();
+  const faltaPago  = !medioPago;
+  if (faltaEnvio || faltaPago) {
+    if (faltaEnvio) document.getElementById('envioBox').classList.add('error');
+    if (faltaPago)  document.getElementById('pagoBox').classList.add('error');
+    const primero = document.getElementById(faltaEnvio ? 'envioBox' : 'pagoBox');
+    primero.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
@@ -1816,6 +1862,7 @@ function enviarPedido() {
     `Subtotal: ${formatPrecio(subtotal)}\n` +
     `*Entrega:* ${envio.detalle}\n` +
     `Envío: ${envio.texto}\n` +
+    `*Pago:* ${medioPago}\n` +
     `*Total: ${formatPrecio(total)}*${envio.texto === 'A coordinar' ? ' + envío' : ''}\n\n` +
     `Espero confirmación.`;
   window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
