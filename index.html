@@ -1321,7 +1321,8 @@
       <div class="envio-titulo">¿Cómo vas a pagar?</div>
            <div id="pagoSelector"></div>
     </div>
-    <div class="aviso-gratis" id="avisoGratis" style="display:none"></div>
+      <div class="aviso-gratis" id="avisoGratis" style="display:none"></div>
+    <div class="envio-row" id="envioRow" style="display:none">
       <span>Envío</span><span id="envioMonto"></span>
     </div>
     <div class="total-row">
@@ -1690,7 +1691,16 @@ function actualizarCarrito() {
   }
   document.getElementById('totalMonto').textContent = formatPrecio(subtotal + (envio ? envio.monto : 0));
   if (tipoEnvio === 'moto') renderZonaResultado(subtotal);
-  if (tipoEnvio === 'moto') renderZonaResultado(subtotal);
+  const aviso = document.getElementById('avisoGratis');
+  if (count > 0 && envio && envio.gratis && !envio.esGratis) {
+    const falta = envio.gratis - subtotal;
+    const pct = Math.min(100, (subtotal / envio.gratis) * 100);
+    aviso.innerHTML = `🚚 Te faltan <strong>${formatPrecio(falta)}</strong> para el envío gratis
+      <div class="aviso-barra"><span style="width:${pct}%"></span></div>`;
+    aviso.style.display = 'block';
+  } else {
+    aviso.style.display = 'none';
+  }
   const itemsEl = document.getElementById('carritoItems');
   if (carrito.length === 0) {
     itemsEl.innerHTML = `<div class="carrito-vacio"><span style="font-size:2.5rem">🛒</span><p>Tu carrito está vacío</p></div>`;
