@@ -1126,6 +1126,45 @@
     transition: color 0.2s;
   }
   .btn-vaciar:hover { color: var(--rojo); }
+  /* ── ENVÍO ── */
+  .envio-box { display: flex; flex-direction: column; gap: 8px; }
+  .envio-titulo { font-size: 0.85rem; font-weight: 600; color: var(--texto); }
+  .envio-box.error .envio-titulo { color: var(--rojo); }
+  .envio-opciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .envio-opcion {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 8px 4px; border: 1.5px solid var(--borde); border-radius: 10px;
+    background: var(--crema); font-family: 'Inter', sans-serif; font-size: 0.78rem;
+    font-weight: 600; color: var(--texto); cursor: pointer; transition: all 0.2s;
+  }
+  .envio-opcion .eo-icono { font-size: 1.2rem; }
+  .envio-opcion:hover { border-color: var(--mostaza); }
+  .envio-opcion.activa { border-color: var(--verde); background: var(--verde-claro); color: var(--verde); }
+  .envio-box.error .envio-opcion { border-color: var(--rojo); }
+  .envio-detalle { font-size: 0.82rem; color: var(--texto-suave); line-height: 1.4; }
+  .zona-buscador input {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 16px; outline: none;
+  }
+  .zona-buscador input:focus { border-color: var(--verde); }
+  .zona-sugerencias {
+    display: flex; flex-direction: column; margin-top: 4px;
+    border: 1px solid var(--borde); border-radius: 10px; overflow: hidden;
+  }
+  .zona-sug {
+    padding: 8px 12px; background: var(--blanco); border: none; border-bottom: 1px solid var(--borde);
+    text-align: left; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--texto); cursor: pointer;
+  }
+  .zona-sug:last-child { border-bottom: none; }
+  .zona-sug:hover { background: var(--verde-claro); }
+  .zona-resultado {
+    margin-top: 6px; padding: 8px 10px; background: var(--verde-claro); border-radius: 8px;
+    color: var(--verde); font-weight: 600; font-size: 0.82rem;
+  }
+  .zona-resultado.zona-no { background: var(--crema); color: var(--texto-suave); font-weight: 500; }
+  .zona-falta { display: block; margin-top: 2px; font-weight: 500; color: var(--texto-suave); }
+  .envio-row { display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--texto-suave); }
+  .btn-whatsapp.deshabilitado { opacity: 0.5; }
   
 </style>
 </head>
@@ -1235,6 +1274,18 @@
     </div>
   </div>
   <div class="carrito-footer">
+        <div class="envio-box" id="envioBox" style="display:none">
+      <div class="envio-titulo">¿Cómo querés recibir tu pedido?</div>
+      <div class="envio-opciones">
+        <button class="envio-opcion" data-tipo="retiro" onclick="elegirEnvio('retiro')"><span class="eo-icono">🏠</span>Retiro</button>
+        <button class="envio-opcion" data-tipo="moto" onclick="elegirEnvio('moto')"><span class="eo-icono">🛵</span>Envío AMBA</button>
+        <button class="envio-opcion" data-tipo="correo" onclick="elegirEnvio('correo')"><span class="eo-icono">📦</span>Correo</button>
+      </div>
+      <div class="envio-detalle" id="envioDetalle"></div>
+    </div>
+    <div class="envio-row" id="envioRow" style="display:none">
+      <span>Envío</span><span id="envioMonto"></span>
+    </div>
     <div class="total-row">
       <span class="total-label">Total</span>
       <span class="total-monto" id="totalMonto">$0</span>
@@ -1321,7 +1372,13 @@ let variantes  = [];
 let carrito    = [];
 let categoriaActiva = 'all';
 let busqueda   = '';
-
+let envios = [];
+let zonas  = [];
+let tipoEnvio  = '';
+let zonaSel    = null;
+let zonaManual = '';
+let sugerenciasActuales = [];
+  
 async function cargarDatos() {
   try {
     const cache = localStorage.getItem('etv_cache');
@@ -1330,6 +1387,8 @@ async function cargarDatos() {
       categorias = cached.categorias;
       productos  = cached.productos;
       variantes  = cached.variantes;
+      envios     = cached.envios || [];
+      zonas      = cached.zonas  || [];
       renderCategorias();
       renderProductos();
     }
@@ -1341,8 +1400,10 @@ async function cargarDatos() {
     categorias = data.categorias || DATA_CATEGORIAS;
     productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI');
     variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
+    envios     = data.envios || [];
+    zonas      = data.zonas  || [];
     try {
-      localStorage.setItem('etv_cache', JSON.stringify({categorias, productos, variantes}));
+      localStorage.setItem('etv_cache', JSON.stringify({categorias, productos, variantes, envios, zonas}));
     } catch(e) {}
   } catch(e) {
     console.warn('API no disponible, usando datos locales:', e.message);
@@ -1568,14 +1629,25 @@ function cambiarCantidad(key, delta) {
 }
 
 function actualizarCarrito() {
-  const total = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
-  const count = carrito.reduce((s, i) => s + i.qty, 0);
+  const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
+  const count    = carrito.reduce((s, i) => s + i.qty, 0);
 
   const badge = document.getElementById('cartBadge');
   badge.textContent = count;
   badge.style.display = count > 0 ? 'flex' : 'none';
   document.getElementById('btnVaciar').style.display = count > 0 ? 'flex' : 'none';
-  document.getElementById('totalMonto').textContent = formatPrecio(total);
+  document.getElementById('envioBox').style.display  = count > 0 ? 'flex' : 'none';
+
+  const envio = calcularEnvio(subtotal);
+  const envioRow = document.getElementById('envioRow');
+  if (envio && count > 0) {
+    envioRow.style.display = 'flex';
+    document.getElementById('envioMonto').textContent = envio.texto;
+  } else {
+    envioRow.style.display = 'none';
+  }
+  document.getElementById('totalMonto').textContent = formatPrecio(subtotal + (envio ? envio.monto : 0));
+  if (tipoEnvio === 'moto') renderZonaResultado(subtotal);
 
   const itemsEl = document.getElementById('carritoItems');
   if (carrito.length === 0) {
@@ -1596,18 +1668,158 @@ function actualizarCarrito() {
       </div>`).join('');
   }
 
-  const lineas = carrito.map(i => `• ${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`).join('\n');
-  const msg = carrito.length
-    ? `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n*Total: ${formatPrecio(total)}*\n\nEspero confirmación.`
-    : 'Hola! Quisiera consultar sobre los productos.';
-  const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
-const btnWa = document.getElementById('btnWhatsapp');
-btnWa.onclick = function(e) {
-  e.preventDefault();
-  window.open(waUrl, '_blank');
-};
+  const btnWa = document.getElementById('btnWhatsapp');
+  btnWa.classList.toggle('deshabilitado', count > 0 && !envioListo());
+  btnWa.onclick = function(e) {
+    e.preventDefault();
+    enviarPedido();
+  };
 }
 
+  // ── ENVÍO ──
+function normalizar(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+function nombreZona(z) {
+  return normalizar(z.zona) === normalizar(z.partido) ? z.zona : `${z.zona} (${z.partido})`;
+}
+
+function envioListo() {
+  if (tipoEnvio === 'retiro' || tipoEnvio === 'correo') return true;
+  if (tipoEnvio === 'moto') return !!(zonaSel || zonaManual);
+  return false;
+}
+
+function calcularEnvio(subtotal) {
+  if (tipoEnvio === 'retiro') {
+    return { monto: 0, texto: 'Sin costo', detalle: 'Retiro por Caballito, Palermo o Castelar (coordinamos el día)' };
+  }
+  if (tipoEnvio === 'correo') {
+    return { monto: 0, texto: 'A coordinar', detalle: 'Envío por correo (a cotizar)' };
+  }
+  if (tipoEnvio === 'moto') {
+    if (zonaSel) {
+      const env = envios.find(e => String(e.nivel) === String(zonaSel.nivel));
+      if (!env) return { monto: 0, texto: 'A coordinar', detalle: `Envío a ${nombreZona(zonaSel)} (a coordinar)` };
+      const precio   = parsePrecio(env.precio);
+      const gratis   = parsePrecio(env.gratis_desde);
+      const esGratis = gratis > 0 && subtotal >= gratis;
+      return {
+        monto: esGratis ? 0 : precio,
+        texto: esGratis ? 'Gratis' : formatPrecio(precio),
+        detalle: `Envío a ${nombreZona(zonaSel)} · ${env.nombre}`,
+        nombreNivel: env.nombre, gratis, esGratis
+      };
+    }
+    if (zonaManual) {
+      return { monto: 0, texto: 'A coordinar', detalle: `Envío a ${zonaManual} (zona a confirmar)` };
+    }
+  }
+  return null;
+}
+
+function elegirEnvio(tipo) {
+  tipoEnvio = tipo;
+  zonaSel = null;
+  zonaManual = '';
+  sugerenciasActuales = [];
+  document.querySelectorAll('.envio-opcion').forEach(b => b.classList.toggle('activa', b.dataset.tipo === tipo));
+  document.getElementById('envioBox').classList.remove('error');
+
+  const detalle = document.getElementById('envioDetalle');
+  if (tipo === 'retiro') {
+    detalle.innerHTML = '📍 Retirás por Caballito, Palermo o Castelar. Coordinamos el día por WhatsApp.';
+  } else if (tipo === 'correo') {
+    detalle.innerHTML = '📦 Para envíos fuera de AMBA. El costo se cotiza según tu destino y lo coordinamos por WhatsApp.';
+  } else {
+    detalle.innerHTML = `
+      <div class="zona-buscador">
+        <input type="text" id="zonaInput" placeholder="Escribí tu barrio o localidad (ej: Morón)" autocomplete="off" oninput="buscarZona(this.value)">
+        <div id="zonaSugerencias"></div>
+        <div id="zonaResultado"></div>
+      </div>`;
+  }
+  actualizarCarrito();
+}
+
+function buscarZona(texto) {
+  zonaSel = null;
+  const q = normalizar(texto);
+  const cont = document.getElementById('zonaSugerencias');
+
+  if (q.length < 2) {
+    sugerenciasActuales = [];
+    zonaManual = '';
+    cont.innerHTML = '';
+    actualizarCarrito();
+    return;
+  }
+
+  sugerenciasActuales = zonas
+    .filter(z => normalizar(z.zona).includes(q) || normalizar(z.partido).includes(q))
+    .sort((a, b) => normalizar(b.zona).startsWith(q) - normalizar(a.zona).startsWith(q))
+    .slice(0, 6);
+
+  if (sugerenciasActuales.length) {
+    zonaManual = '';
+    cont.innerHTML = '<div class="zona-sugerencias">' +
+      sugerenciasActuales.map((z, i) =>
+        `<button class="zona-sug" onclick="elegirZona(${i})">${escHtml(nombreZona(z))}</button>`
+      ).join('') + '</div>';
+  } else {
+    zonaManual = q.length >= 3 ? texto.trim() : '';
+    cont.innerHTML = '<div class="zona-resultado zona-no">No encontramos esa zona. Igual podés enviar el pedido y coordinamos el envío por WhatsApp.</div>';
+  }
+  actualizarCarrito();
+}
+
+function elegirZona(i) {
+  zonaSel = sugerenciasActuales[i];
+  zonaManual = '';
+  document.getElementById('zonaInput').value = nombreZona(zonaSel);
+  document.getElementById('zonaSugerencias').innerHTML = '';
+  actualizarCarrito();
+}
+
+function renderZonaResultado(subtotal) {
+  const el = document.getElementById('zonaResultado');
+  if (!el) return;
+  if (!zonaSel) { el.innerHTML = ''; return; }
+  const env = calcularEnvio(subtotal);
+  let html = env.nombreNivel
+    ? `${escHtml(env.nombreNivel)} · ${env.esGratis ? 'Envío gratis 🎉' : 'Envío ' + env.texto}`
+    : 'Envío a coordinar';
+  if (env.gratis && !env.esGratis) {
+    html += `<span class="zona-falta">Te faltan ${formatPrecio(env.gratis - subtotal)} para el envío gratis</span>`;
+  }
+  el.innerHTML = `<div class="zona-resultado">${html}</div>`;
+}
+
+function enviarPedido() {
+  if (!carrito.length) {
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola! Quisiera consultar sobre los productos.')}`, '_blank');
+    return;
+  }
+  if (!envioListo()) {
+    const box = document.getElementById('envioBox');
+    box.classList.add('error');
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
+  const envio = calcularEnvio(subtotal);
+  const total = subtotal + envio.monto;
+  const lineas = carrito.map(i => `• ${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`).join('\n');
+  const msg =
+    `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n` +
+    `Subtotal: ${formatPrecio(subtotal)}\n` +
+    `*Entrega:* ${envio.detalle}\n` +
+    `Envío: ${envio.texto}\n` +
+    `*Total: ${formatPrecio(total)}*${envio.texto === 'A coordinar' ? ' + envío' : ''}\n\n` +
+    `Espero confirmación.`;
+  window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+}
 function vaciarCarrito() {
   if (!confirm('¿Querés vaciar el carrito?')) return;
   carrito = [];
