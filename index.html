@@ -1864,9 +1864,6 @@ function renderZonaResultado(subtotal) {
   const nombre = env.nombreNivel ? escHtml(env.nombreNivel) : 'Envío a coordinar';
   const precio = env.nombreNivel ? (env.esGratis ? 'Gratis 🎉' : env.texto) : '';
   let html = `<div class="zona-res-fila"><span>${nombre}</span><span>${precio}</span></div>`;
-
-    html += `<span class="zona-falta">Te faltan ${formatPrecio(env.gratis - subtotal)} para el envío gratis</span>`;
-  }
   el.innerHTML = `<div class="zona-resultado">${html}</div>`;
 }
 
