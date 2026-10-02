@@ -1345,7 +1345,7 @@ const EMOJI_PROD = {
   34:'🍬', 35:'🧈',
 };
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyujL5dP7l3fKrkQJoeTKp-S31V5mdqfpjkeA5QCWgoQLGV7S48hs-zqmUv_WUjmPJXsQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbytltkc7Og05XkQweZsI2qORM0nraW3V2ZaXN_tcmtlUQWp1sliLCFXDbdqPuHIWB91ng/exec';
 
 const DATA_CATEGORIAS = [
   {id:1,  nombre:'Yerba mate',                  orden:1},
@@ -1735,7 +1735,7 @@ function elegirEnvio(tipo) {
   } else {
     detalle.innerHTML = `
       <div class="zona-buscador">
-        <input type="text" id="zonaInput" placeholder="Escribí tu barrio o localidad (ej: Morón)" autocomplete="off" oninput="buscarZona(this.value)">
+        <input type="text" id="zonaInput" placeholder="🔍 Buscá tu barrio o localidad" autocomplete="off" oninput="buscarZona(this.value)">
         <div id="zonaSugerencias"></div>
         <div id="zonaResultado"></div>
       </div>`;
