@@ -1141,7 +1141,7 @@
   .envio-opcion:hover { border-color: var(--mostaza); }
   .envio-opcion.activa { border-color: var(--verde); background: var(--verde-claro); color: var(--verde); }
   .envio-box.error .envio-opcion { border-color: var(--rojo); }
-  .envio-detalle { font-size: 0.82rem; color: var(--texto-suave); line-height: 1.4; }
+  .envio-detalle { font-size: 0.95rem; color: var(--texto-suave); line-height: 1.4; }
   .zona-buscador input {
     width: 100%; padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px;
     font-family: 'Inter', sans-serif; font-size: 16px; outline: none;
@@ -1176,22 +1176,39 @@
     .pago-box { display: flex; flex-direction: column; gap: 8px; }
   .pago-box.error .envio-titulo { color: var(--rojo); }
   .pago-box.error select { border-color: var(--rojo); }
+    .zona-sug { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .zona-sug-precio { font-weight: 600; color: var(--verde); white-space: nowrap; }
+  .zona-res-fila { display: flex; justify-content: space-between; gap: 8px; }
+  .selector-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px; background: var(--blanco);
+    font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--texto-suave); cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .selector-btn:hover, .selector.abierto .selector-btn { border-color: var(--verde); }
+  .selector.elegido .selector-btn { color: var(--texto); font-weight: 600; }
+  .selector-btn svg { flex-shrink: 0; transition: transform 0.2s; }
+  .selector.abierto .selector-btn svg { transform: rotate(180deg); }
+  .selector-lista { display: none; }
+  .selector.abierto .selector-lista { display: flex; }
+  .envio-box.error .selector-btn, .pago-box.error .selector-btn { border-color: var(--rojo); }
+  .zona-sug.activa { background: var(--verde-claro); }
 </style>
 </head>
 <body>
 
 <!-- TICKER -->
 <div class="ticker-wrap">
-  <div class="ticker-track" id="tickerTrack">
-    <span class="ticker-item">🚚 Entrega gratis a CABA y GBA (1er y 2do cordón) en compras mayores a $35.000.-</span>
+    <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde $35.000.-</span>
     <span class="ticker-sep">✦</span>
-    <span class="ticker-item">3er cordón GBA: se paga extra de $3.200.-</span>
+    <span class="ticker-item">🛵 Calculá el envío a tu zona desde el carrito</span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">Precios para AMBA · Efectivo o transferencia</span>
     <span class="ticker-sep">✦</span>
-    <span class="ticker-item">🚚 Entrega gratis a CABA y GBA (1er y 2do cordón) en compras mayores a $35.000.-</span>
+    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde $35.000.-</span>
     <span class="ticker-sep">✦</span>
-    <span class="ticker-item">3er cordón GBA: se paga extra de $3.200.-</span>
+    <span class="ticker-item">🛵 Calculá el envío a tu zona desde el carrito</span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">Precios para AMBA · Efectivo o transferencia</span>
     <span class="ticker-sep">✦</span>
@@ -1295,13 +1312,7 @@
     </div>
         <div class="pago-box" id="pagoBox" style="display:none">
       <div class="envio-titulo">¿Cómo vas a pagar?</div>
-      <div class="zona-buscador">
-        <select id="pagoSelect" onchange="elegirPago(this.value)">
-          <option value="">💳 Elegí el medio de pago</option>
-          <option value="Efectivo">Efectivo</option>
-          <option value="Transferencia">Transferencia</option>
-        </select>
-      </div>
+           <div id="pagoSelector"></div>
     </div>
     <div class="envio-row" id="envioRow" style="display:none">
       <span>Envío</span><span id="envioMonto"></span>
@@ -1755,20 +1766,15 @@ function elegirEnvio(tipo) {
 
   const detalle = document.getElementById('envioDetalle');
   if (tipo === 'retiro') {
-    detalle.innerHTML = `
-      <div class="zona-buscador">
-        <select id="retiroSelect" onchange="elegirRetiro(this.value)">
-          <option value="">📍 Elegí dónde retirar</option>
-          ${PUNTOS_RETIRO.map(p => `<option value="${escHtml(p)}">${escHtml(p)}</option>`).join('')}
-        </select>
-      </div>
-      <div style="margin-top:6px">Coordinamos el día por WhatsApp.</div>`;
+    detalle.innerHTML =
+      crearSelector('retiro', '📍 Elegí dónde retirar', PUNTOS_RETIRO, elegirRetiro) +
+      '<div style="margin-top:6px">Coordinamos el día por WhatsApp.</div>';
   } else if (tipo === 'correo') {
     detalle.innerHTML = '📦 Para envíos fuera de AMBA. El costo se cotiza según tu destino y lo coordinamos por WhatsApp.';
   } else {
     detalle.innerHTML = `
       <div class="zona-buscador">
-        <input type="text" id="zonaInput" placeholder="🔍 Buscá tu barrio o localidad" autocomplete="off" oninput="buscarZona(this.value)">
+        <input type="text" id="zonaInput" placeholder="🔍 Buscá tu barrio o localidad" autocomplete="off" oninput="buscarZona(this.value)" onkeydown="teclaZona(event)">
         <div id="zonaSugerencias"></div>
         <div id="zonaResultado"></div>
       </div>`;
@@ -1783,6 +1789,7 @@ function elegirRetiro(valor) {
 }
 
 function buscarZona(texto) {
+    sugIndex = -1;
   zonaSel = null;
   const q = normalizar(texto);
   const cont = document.getElementById('zonaSugerencias');
@@ -1804,7 +1811,7 @@ function buscarZona(texto) {
     zonaManual = '';
     cont.innerHTML = '<div class="zona-sugerencias">' +
       sugerenciasActuales.map((z, i) =>
-        `<button class="zona-sug" onclick="elegirZona(${i})">${escHtml(nombreZona(z))}</button>`
+        `<button class="zona-sug" onclick="elegirZona(${i})"><span>${escHtml(nombreZona(z))}</span><span class="zona-sug-precio">${precioSugerencia(z)}</span></button>`
       ).join('') + '</div>';
   } else {
     zonaManual = q.length >= 3 ? texto.trim() : '';
@@ -1812,7 +1819,28 @@ function buscarZona(texto) {
   }
   actualizarCarrito();
 }
-
+function teclaZona(e) {
+  const botones = document.querySelectorAll('#zonaSugerencias .zona-sug');
+  if (!botones.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    sugIndex = (sugIndex + 1) % botones.length;
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    sugIndex = (sugIndex - 1 + botones.length) % botones.length;
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    elegirZona(sugIndex >= 0 ? sugIndex : 0);
+    return;
+  } else if (e.key === 'Escape') {
+    document.getElementById('zonaSugerencias').innerHTML = '';
+    return;
+  } else {
+    return;
+  }
+  botones.forEach((b, i) => b.classList.toggle('activa', i === sugIndex));
+  botones[sugIndex].scrollIntoView({ block: 'nearest' });
+}
 function elegirZona(i) {
   zonaSel = sugerenciasActuales[i];
   zonaManual = '';
@@ -1826,7 +1854,9 @@ function renderZonaResultado(subtotal) {
   if (!el) return;
   if (!zonaSel) { el.innerHTML = ''; return; }
   const env = calcularEnvio(subtotal);
-   let html = env.nombreNivel ? escHtml(env.nombreNivel) : 'Envío a coordinar';
+  const nombre = env.nombreNivel ? escHtml(env.nombreNivel) : 'Envío a coordinar';
+  const precio = env.nombreNivel ? (env.esGratis ? 'Gratis 🎉' : env.texto) : '';
+  let html = `<div class="zona-res-fila"><span>${nombre}</span><span>${precio}</span></div>`;
   if (env.gratis && !env.esGratis) {
     html += `<span class="zona-falta">Te faltan ${formatPrecio(env.gratis - subtotal)} para el envío gratis</span>`;
   }
@@ -1867,6 +1897,57 @@ function enviarPedido() {
     `Espero confirmación.`;
   window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
 }
+  // ── DESPLEGABLES ──
+const SELECTORES = {};
+
+function crearSelector(id, placeholder, opciones, alElegir) {
+  SELECTORES[id] = { opciones, alElegir };
+  return `
+    <div class="selector" id="sel-${id}">
+      <button type="button" class="selector-btn" onclick="toggleSelector('${id}')">
+        <span class="selector-valor">${escHtml(placeholder)}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="zona-sugerencias selector-lista">
+        ${opciones.map((o, i) => `<button type="button" class="zona-sug" onclick="elegirOpcion('${id}', ${i})">${escHtml(o)}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function toggleSelector(id) {
+  const el = document.getElementById('sel-' + id);
+  const abrir = !el.classList.contains('abierto');
+  document.querySelectorAll('.selector.abierto').forEach(s => s.classList.remove('abierto'));
+  el.classList.toggle('abierto', abrir);
+}
+
+function elegirOpcion(id, i) {
+  const s  = SELECTORES[id];
+  const el = document.getElementById('sel-' + id);
+  const valor = s.opciones[i];
+  el.querySelector('.selector-valor').textContent = valor;
+  el.classList.add('elegido');
+  el.classList.remove('abierto');
+  el.querySelectorAll('.zona-sug').forEach((b, j) => b.classList.toggle('activa', j === i));
+  s.alElegir(valor);
+}
+
+document.addEventListener('click', e => {
+  document.querySelectorAll('.selector.abierto').forEach(s => {
+    if (!s.contains(e.target)) s.classList.remove('abierto');
+  });
+});
+
+function precioSugerencia(z) {
+  const env = envios.find(e => String(e.nivel) === String(z.nivel));
+  if (!env) return '';
+  const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
+  const gratis = parsePrecio(env.gratis_desde);
+  return gratis > 0 && subtotal >= gratis ? 'Gratis' : formatPrecio(parsePrecio(env.precio));
+}
+
+document.getElementById('pagoSelector').innerHTML =
+  crearSelector('pago', '💳 Elegí el medio de pago', ['Efectivo', 'Transferencia'], elegirPago);
 function vaciarCarrito() {
   if (!confirm('¿Querés vaciar el carrito?')) return;
   carrito = [];
