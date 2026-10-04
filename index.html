@@ -2021,7 +2021,9 @@ function toggleCarrito() {
   overlay.classList.toggle('abierto', !abierto);
   document.body.style.overflow = abierto ? '' : 'hidden';
   if (!abierto && window.matchMedia('(max-width: 899px)').matches) {
-    panel.scrollTop = panel.scrollHeight;
+    const irAbajo = () => { panel.scrollTop = panel.scrollHeight; };
+    requestAnimationFrame(() => requestAnimationFrame(irAbajo));
+    setTimeout(irAbajo, 320);
   }
 }
 
