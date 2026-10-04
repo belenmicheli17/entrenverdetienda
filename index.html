@@ -1235,13 +1235,13 @@
 <!-- TICKER -->
 <div class="ticker-wrap">
     <div class="ticker-track" id="tickerTrack">
-    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde <span class="tk-gratis">$35.000</span>.-</span>
+ <span class="ticker-item tk-gratis" style="display:none"></span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">🛵 Calculá el envío a tu zona desde el carrito</span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">Precios para AMBA · Efectivo o transferencia</span>
     <span class="ticker-sep">✦</span>
-    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde <span class="tk-gratis">$35.000</span>.-</span>
+ <span class="ticker-item tk-gratis" style="display:none"></span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">🛵 Calculá el envío a tu zona desde el carrito</span>
     <span class="ticker-sep">✦</span>
@@ -1386,8 +1386,7 @@
 
 <script>
 const WA_NUMBER = '5491156385467';
-const ALIAS     = 'alias.aqui';
-const TITULAR   = 'Nombre Titular';
+
 const PUNTOS_RETIRO = ['Caballito', 'Palermo', 'Castelar'];
 const EMOJIS_CAT = {
   'Yerba mate': '🧉',
@@ -1490,13 +1489,19 @@ async function cargarDatos() {
   renderProductos();
 }
 
-  function actualizarTicker() {
+function actualizarTicker() {
   const env2 = envios.find(e => String(e.nivel) === '2');
   const monto = env2 ? parsePrecio(env2.gratis_desde) : 0;
-  if (monto > 0) {
-    document.querySelectorAll('.tk-gratis').forEach(el => { el.textContent = formatPrecio(monto); });
-  }
+  document.querySelectorAll('.tk-gratis').forEach(el => {
+    if (monto > 0) {
+      el.textContent = `🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde ${formatPrecio(monto)}.-`;
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  });
 }
+  
 function renderCategorias() {
   const wrap = document.getElementById('categoriasInner');
   const dropdown = document.getElementById('catDropdown');
