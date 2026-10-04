@@ -1200,6 +1200,10 @@
   .aviso-gratis strong { color: var(--verde); }
   .aviso-barra { height: 6px; background: var(--borde); border-radius: 3px; margin-top: 8px; overflow: hidden; }
   .aviso-barra span { display: block; height: 100%; background: var(--verde); border-radius: 3px; transition: width 0.3s; }
+  .aviso-minimo {
+    margin-top: 6px; padding: 8px 10px; background: #FFF5F5; border: 1.5px solid var(--rojo);
+    border-radius: 8px; color: var(--rojo); font-size: 0.9rem; line-height: 1.4;
+  }
 </style>
 </head>
 <body>
@@ -1207,13 +1211,13 @@
 <!-- TICKER -->
 <div class="ticker-wrap">
     <div class="ticker-track" id="tickerTrack">
-    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde $35.000.-</span>
+    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde <span class="tk-gratis">$35.000</span>.-</span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">🛵 Calculá el envío a tu zona desde el carrito</span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">Precios para AMBA · Efectivo o transferencia</span>
     <span class="ticker-sep">✦</span>
-    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde $35.000.-</span>
+    <span class="ticker-item">🚚 Envío gratis en CABA y zonas cercanas de GBA en compras desde <span class="tk-gratis">$35.000</span>.-</span>
     <span class="ticker-sep">✦</span>
     <span class="ticker-item">🛵 Calculá el envío a tu zona desde el carrito</span>
     <span class="ticker-sep">✦</span>
@@ -1432,6 +1436,7 @@ async function cargarDatos() {
       variantes  = cached.variantes;
       envios     = cached.envios || [];
       zonas      = cached.zonas  || [];
+      actualizarTicker();
       renderCategorias();
       renderProductos();
     }
@@ -1445,6 +1450,7 @@ async function cargarDatos() {
     variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
     envios     = data.envios || [];
     zonas      = data.zonas  || [];
+    actualizarTicker();
     try {
       localStorage.setItem('etv_cache', JSON.stringify({categorias, productos, variantes, envios, zonas}));
     } catch(e) {}
@@ -1460,6 +1466,13 @@ async function cargarDatos() {
   renderProductos();
 }
 
+  function actualizarTicker() {
+  const env2 = envios.find(e => String(e.nivel) === '2');
+  const monto = env2 ? parsePrecio(env2.gratis_desde) : 0;
+  if (monto > 0) {
+    document.querySelectorAll('.tk-gratis').forEach(el => { el.textContent = formatPrecio(monto); });
+  }
+}
 function renderCategorias() {
   const wrap = document.getElementById('categoriasInner');
   const dropdown = document.getElementById('catDropdown');
@@ -1721,7 +1734,7 @@ function actualizarCarrito() {
   }
 
   const btnWa = document.getElementById('btnWhatsapp');
-  btnWa.classList.toggle('deshabilitado', count > 0 && (!envioListo() || !medioPago));
+    btnWa.classList.toggle('deshabilitado', count > 0 && (!envioListo() || !medioPago || (envio && envio.bajoMinimo)));
   btnWa.onclick = function(e) {
     e.preventDefault();
     enviarPedido();
@@ -1757,12 +1770,13 @@ function calcularEnvio(subtotal) {
       if (!env) return { monto: 0, texto: 'A coordinar', detalle: `Envío a ${nombreZona(zonaSel)} (a coordinar)` };
       const precio   = parsePrecio(env.precio);
       const gratis   = parsePrecio(env.gratis_desde);
+            const minimo   = parsePrecio(env.minimo_desde);
       const esGratis = gratis > 0 && subtotal >= gratis;
       return {
         monto: esGratis ? 0 : precio,
         texto: esGratis ? 'Gratis' : formatPrecio(precio),
         detalle: `Envío a ${nombreZona(zonaSel)}`,
-        nombreNivel: env.nombre, gratis, esGratis
+                nombreNivel: env.nombre, gratis, esGratis,         minimo, bajoMinimo: minimo > 0 && subtotal < minimo
       };
     }
     if (zonaManual) {
@@ -1874,7 +1888,10 @@ function renderZonaResultado(subtotal) {
   const nombre = env.nombreNivel ? escHtml(env.nombreNivel) : 'Envío a coordinar';
   const precio = env.nombreNivel ? (env.esGratis ? 'Gratis 🎉' : env.texto) : '';
   let html = `<div class="zona-res-fila"><span>${nombre}</span><span>${precio}</span></div>`;
-  el.innerHTML = `<div class="zona-resultado">${html}</div>`;
+  el.innerHTML = `<div class="zona-resultado">${html}</div>` +
+    (env.bajoMinimo
+      ? `<div class="aviso-minimo">Para el envío a tu zona el mínimo de compra es <strong>${formatPrecio(env.minimo)}</strong>. Podés cambiar de zona o sumar más productos para alcanzarlo (te faltan ${formatPrecio(env.minimo - subtotal)}).</div>`
+      : '');
 }
 
 function elegirPago(valor) {
@@ -1899,6 +1916,10 @@ function enviarPedido() {
   }
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
   const envio = calcularEnvio(subtotal);
+    if (envio.bajoMinimo) {
+    document.getElementById('zonaResultado').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
   const total = subtotal + envio.monto;
   const lineas = carrito.map(i => `• ${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`).join('\n');
   const msg =
