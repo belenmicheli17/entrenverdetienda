@@ -1204,6 +1204,30 @@
     margin-top: 6px; padding: 8px 10px; background: #FFF5F5; border: 1.5px solid var(--rojo);
     border-radius: 8px; color: var(--rojo); font-size: 0.9rem; line-height: 1.4;
   }
+    /* ── CARRITO EN 2 COLUMNAS (solo PC) ── */
+  @media (min-width: 900px) {
+    .carrito-panel {
+      width: min(860px, 100vw);
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    .carrito-header { grid-column: 1 / -1; }
+    .carrito-items  { grid-column: 1; grid-row: 2; min-height: 0; }
+    .carrito-footer {
+      grid-column: 2; grid-row: 2; min-height: 0;
+      overflow-y: auto;
+      border-top: none;
+      border-left: 1px solid var(--borde);
+    }
+  }
+    /* ── CARRITO MÓVIL: un solo scroll ── */
+  @media (max-width: 899px) {
+    .carrito-panel { overflow-y: auto; overscroll-behavior: contain; }
+    .carrito-header { position: sticky; top: 0; z-index: 2; }
+    .carrito-items { flex: 1 0 auto; overflow-y: visible; }
+    .carrito-footer { flex-shrink: 0; }
+  }
 </style>
 </head>
 <body>
@@ -1996,6 +2020,9 @@ function toggleCarrito() {
   panel.classList.toggle('abierto', !abierto);
   overlay.classList.toggle('abierto', !abierto);
   document.body.style.overflow = abierto ? '' : 'hidden';
+  if (!abierto && window.matchMedia('(max-width: 899px)').matches) {
+    panel.scrollTop = panel.scrollHeight;
+  }
 }
 
 document.getElementById('modalProducto').addEventListener('click', e => {
