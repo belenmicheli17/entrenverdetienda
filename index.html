@@ -1174,6 +1174,15 @@
   .zona-buscador select:focus { border-color: var(--verde); }
 
     .pago-box { display: flex; flex-direction: column; gap: 8px; }
+    .nombre-box { display: flex; flex-direction: column; gap: 8px; }
+  .nombre-box label { font-size: 0.85rem; font-weight: 600; color: var(--texto); }
+  .nombre-box label span { font-weight: 400; color: var(--texto-suave); }
+  .nombre-box input {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 16px; outline: none; background: var(--blanco); box-sizing: border-box;
+  }
+  .nombre-box input:focus { border-color: var(--verde); }
+  .btn-whatsapp.enviando { opacity: 0.7; pointer-events: none; }
   .pago-box.error .envio-titulo { color: var(--rojo); }
   .pago-box.error select { border-color: var(--rojo); }
     .zona-sug { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -1348,6 +1357,10 @@
         <div class="pago-box" id="pagoBox" style="display:none">
       <div class="envio-titulo">¿Cómo vas a pagar?</div>
            <div id="pagoSelector"></div>
+              <div class="nombre-box" id="nombreBox" style="display:none">
+      <label for="nombreCliente">Tu nombre <span>(opcional)</span></label>
+      <input type="text" id="nombreCliente" maxlength="60" autocomplete="name" placeholder="Para saber de quién es el pedido">
+    </div>
     </div>
       <div class="aviso-gratis" id="avisoGratis" style="display:none"></div>
     <div class="envio-row" id="envioRow" style="display:none">
@@ -1387,6 +1400,7 @@
 <script>
 const WA_NUMBER = '5491156385467';
 
+const PEDIDOS_URL = 'https://script.google.com/macros/s/AKfycbw-g5D9S2QcR6Kgk8xiWNLsXItPD4QQ9kn-FzWHvMNmiOunT4J2s9TIYapRhPRyBq_rcA/exec';
 const PUNTOS_RETIRO = ['Caballito', 'Palermo', 'Castelar'];
 const EMOJIS_CAT = {
   'Yerba mate': '🧉',
@@ -1735,6 +1749,7 @@ function actualizarCarrito() {
   document.getElementById('btnVaciar').style.display = count > 0 ? 'flex' : 'none';
   document.getElementById('envioBox').style.display  = count > 0 ? 'flex' : 'none';
   document.getElementById('pagoBox').style.display   = count > 0 ? 'flex' : 'none';
+    document.getElementById('nombreBox').style.display = count > 0 ? 'flex' : 'none';
   const envio = calcularEnvio(subtotal);
   const envioRow = document.getElementById('envioRow');
   if (envio && count > 0) {
@@ -1941,7 +1956,40 @@ function renderMinimoCorreo(subtotal) {   const el = document.getElementById('zo
   actualizarCarrito();
 }
 
-function enviarPedido() {
+let enviandoPedido = false;
+
+// Pide el número de pedido. Si tarda o falla, devuelve null y el pedido sale igual.
+async function pedirNumero(datos) {
+  if (!/^https:\/\/script\.google\.com\//.test(PEDIDOS_URL)) return null;
+  const ctrl = new AbortController();
+  const corte = setTimeout(() => ctrl.abort(), 6000);
+  try {
+    const res = await fetch(PEDIDOS_URL, {
+      method: 'POST',
+      body: JSON.stringify(Object.assign({ accion: 'nuevoPedido' }, datos)),
+      signal: ctrl.signal
+    });
+    const j = await res.json();
+    return j && j.ok && j.data && j.data.numero ? j.data.numero : null;
+  } catch (e) {
+    console.warn('No se pudo numerar el pedido:', e);
+    return null;
+  } finally {
+    clearTimeout(corte);
+  }
+}
+
+// Recordar el nombre para la próxima compra en este dispositivo.
+(function () {
+  const input = document.getElementById('nombreCliente');
+  try { input.value = localStorage.getItem('etv_nombre') || ''; } catch (e) {}
+  input.addEventListener('change', () => {
+    try { localStorage.setItem('etv_nombre', input.value.trim()); } catch (e) {}
+  });
+})();
+
+async function enviarPedido() {
+  if (enviandoPedido) return;
   if (!carrito.length) {
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola! Quisiera consultar sobre los productos.')}`, '_blank');
     return;
@@ -1962,21 +2010,55 @@ function enviarPedido() {
     return;
   }
   const total = subtotal + envio.monto;
-  const lineas = carrito.map(i => {
+  const items = carrito.map(i => {
     const p = productos.find(x => String(x.id) === String(i.prodId));
     const marca = p && String(p.categoria_id) === '2' ? abrevMarca(p.marca) : '';
     const etiqueta = marca ? `[${marca}] ` : '';
-    return `• ${etiqueta}${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`;
-  }).join('\n');
+    return `${etiqueta}${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`;
+  });
+  const lineas = items.map(t => `• ${t}`).join('\n');
+  const totalTxt = `${formatPrecio(total)}${envio.texto === 'A coordinar' ? ' + envío' : ''}`;
+  const nombre = document.getElementById('nombreCliente').value.trim();
+  try { localStorage.setItem('etv_nombre', nombre); } catch (e) {}
+
+  // La ventana de WhatsApp se abre ya (si no, el celu la bloquea) y se completa al tener el número.
+  const ventana = window.open('', '_blank');
+  if (ventana) {
+    try { ventana.document.write('<p style="font-family:sans-serif;padding:24px">Preparando tu pedido…</p>'); } catch (e) {}
+  }
+  const btnWa = document.getElementById('btnWhatsapp');
+  enviandoPedido = true;
+  btnWa.classList.add('enviando');
+
+  const numero = await pedirNumero({
+    nombre,
+    items: items.map(texto => ({ texto })),
+    subtotal,
+    entrega: envio.detalle,
+    envio: envio.texto,
+    pago: medioPago,
+    total: totalTxt
+  });
+
+  enviandoPedido = false;
+  btnWa.classList.remove('enviando');
+
+  const encabezado =
+    (numero ? `*Pedido #${numero}*\n` : '') +
+    (nombre ? `Nombre: ${nombre}\n` : '') +
+    (numero || nombre ? '\n' : '');
   const msg =
+    encabezado +
     `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n` +
     `Subtotal: ${formatPrecio(subtotal)}\n` +
     `*Entrega:* ${envio.detalle}\n` +
     `Envío: ${envio.texto}\n` +
     `*Pago:* ${medioPago}\n` +
-    `*Total: ${formatPrecio(total)}*${envio.texto === 'A coordinar' ? ' + envío' : ''}\n\n` +
+    `*Total: ${totalTxt}*\n\n` +
     `Espero confirmación.`;
-  window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`;
+  if (ventana && !ventana.closed) ventana.location.href = url;
+  else window.location.href = url;
 }
   // ── DESPLEGABLES ──
 const SELECTORES = {};
