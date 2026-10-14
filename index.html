@@ -1411,7 +1411,10 @@ const EMOJI_PROD = {
   34:'🍬', 35:'🧈',
 };
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbytltkc7Og05XkQweZsI2qORM0nraW3V2ZaXN_tcmtlUQWp1sliLCFXDbdqPuHIWB91ng/exec';
+const API_URLS = [
+  'https://script.google.com/macros/s/AKfycbytltkc7Og05XkQweZsI2qORM0nraW3V2ZaXN_tcmtlUQWp1sliLCFXDbdqPuHIWB91ng/exec',
+  'https://script.google.com/macros/s/AKfycbyujL5dP7l3fKrkQJoeTKp-S31V5mdqfpjkeA5QCWgoQLGV7S48hs-zqmUv_WUjmPJXsQ/exec'
+];
 
 const DATA_CATEGORIAS = [
   {id:1,  nombre:'Yerba mate',                  orden:1},
@@ -1466,8 +1469,17 @@ async function cargarDatos() {
   } catch(e) {}
 
   try {
-    const res  = await fetch(API_URL);
-    const data = await res.json();
+       let data = null;
+    for (const url of API_URLS) {
+      try {
+        const res = await fetch(url);
+        data = await res.json();
+        break;
+      } catch (err) {
+        console.warn('API falló, pruebo la siguiente:', url);
+      }
+    }
+    if (!data) throw new Error('Ninguna API respondió');
     categorias = data.categorias || DATA_CATEGORIAS;
     productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI');
     variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
@@ -1732,7 +1744,7 @@ function actualizarCarrito() {
     envioRow.style.display = 'none';
   }
   document.getElementById('totalMonto').textContent = formatPrecio(subtotal + (envio ? envio.monto : 0));
-  if (tipoEnvio === 'moto') renderZonaResultado(subtotal);
+  if (tipoEnvio === 'moto') renderZonaResultado(subtotal);   if (tipoEnvio === 'correo') renderMinimoCorreo(subtotal);
   const aviso = document.getElementById('avisoGratis');
   if (count > 0 && envio && envio.gratis && !envio.esGratis) {
     const falta = envio.gratis - subtotal;
@@ -1791,7 +1803,7 @@ function calcularEnvio(subtotal) {
     return { monto: 0, texto: 'Sin costo', detalle: `Retiro por ${puntoRetiro || 'a definir'} (coordinamos el día)` };
   }
   if (tipoEnvio === 'correo') {
-    return { monto: 0, texto: 'A coordinar', detalle: 'Envío por correo (a cotizar)' };
+    const envC = envios.find(e => String(e.nivel) === '5');     const minimoC = envC ? parsePrecio(envC.minimo_desde) : 0;     return { monto: 0, texto: 'A coordinar', detalle: 'Envío por correo (a cotizar)', minimo: minimoC, bajoMinimo: minimoC > 0 && subtotal < minimoC };
   }
   if (tipoEnvio === 'moto') {
     if (zonaSel) {
@@ -1830,7 +1842,7 @@ function elegirEnvio(tipo) {
       crearSelector('retiro', '📍 Elegí dónde retirar', PUNTOS_RETIRO, elegirRetiro) +
       '<div style="margin-top:6px">Coordinamos el día por WhatsApp.</div>';
   } else if (tipo === 'correo') {
-    detalle.innerHTML = '📦 Para envíos fuera de AMBA. El costo se cotiza según tu destino y lo coordinamos por WhatsApp.';
+    detalle.innerHTML = '📦 Para envíos fuera de AMBA. El costo se cotiza según tu destino y lo coordinamos por WhatsApp.<div id="zonaResultado"></div>';
   } else {
     detalle.innerHTML = `
       <div class="zona-buscador">
@@ -1923,7 +1935,7 @@ function renderZonaResultado(subtotal) {
       : '');
 }
 
-function elegirPago(valor) {
+function renderMinimoCorreo(subtotal) {   const el = document.getElementById('zonaResultado');   if (!el) return;   const env = calcularEnvio(subtotal);   el.innerHTML = env && env.bajoMinimo     ? `<div class="aviso-minimo">Para envíos por correo el mínimo de compra es <strong>${formatPrecio(env.minimo)}</strong>. Sumá más productos para alcanzarlo (te faltan ${formatPrecio(env.minimo - subtotal)}).</div>`     : ''; }  function abrevMarca(marca) {   const limpia = String(marca || '').trim().replace(/^(el|la|los|las)\s+/i, '');   return limpia.slice(0, 3); }  function elegirPago(valor) {
   medioPago = valor;
   document.getElementById('pagoBox').classList.remove('error');
   actualizarCarrito();
@@ -1950,7 +1962,12 @@ function enviarPedido() {
     return;
   }
   const total = subtotal + envio.monto;
-  const lineas = carrito.map(i => `• ${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`).join('\n');
+  const lineas = carrito.map(i => {
+    const p = productos.find(x => String(x.id) === String(i.prodId));
+    const marca = p && String(p.categoria_id) === '2' ? abrevMarca(p.marca) : '';
+    const etiqueta = marca ? `[${marca}] ` : '';
+    return `• ${etiqueta}${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`;
+  }).join('\n');
   const msg =
     `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n` +
     `Subtotal: ${formatPrecio(subtotal)}\n` +
