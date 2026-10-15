@@ -1182,6 +1182,8 @@
     font-family: 'Inter', sans-serif; font-size: 16px; outline: none; background: var(--blanco); box-sizing: border-box;
   }
   .nombre-box input:focus { border-color: var(--verde); }
+  .nombre-box.error label { color: var(--rojo); }
+  .nombre-box.error input { border-color: var(--rojo); }
   .btn-whatsapp.enviando { opacity: 0.7; pointer-events: none; }
   .pago-box.error .envio-titulo { color: var(--rojo); }
   .pago-box.error select { border-color: var(--rojo); }
@@ -1358,8 +1360,9 @@
       <div class="envio-titulo">¿Cómo vas a pagar?</div>
            <div id="pagoSelector"></div>
               <div class="nombre-box" id="nombreBox" style="display:none">
-      <label for="nombreCliente">Tu nombre <span>(opcional)</span></label>
-      <input type="text" id="nombreCliente" maxlength="60" autocomplete="name" placeholder="Para saber de quién es el pedido">
+      <label for="nombreCliente">Tu nombre</label>
+      <input type="text" id="nombreCliente" maxlength="60" autocomplete="name" list="nombresUsados" placeholder="Para saber de quién es el pedido">
+      <datalist id="nombresUsados"></datalist>
     </div>
     </div>
       <div class="aviso-gratis" id="avisoGratis" style="display:none"></div>
@@ -1979,13 +1982,41 @@ async function pedirNumero(datos) {
   }
 }
 
-// Recordar el nombre para la próxima compra en este dispositivo.
+// Recordar los nombres usados en este dispositivo: se completa el último
+// y se ofrecen los anteriores al tocar el campo.
+function nombresUsados() {
+  let lista = [];
+  try { lista = JSON.parse(localStorage.getItem('etv_nombres') || '[]'); } catch (e) {}
+  if (!Array.isArray(lista)) lista = [];
+  let ultimo = '';
+  try { ultimo = localStorage.getItem('etv_nombre') || ''; } catch (e) {}
+  if (ultimo) lista.unshift(ultimo);
+  const vistos = {};
+  return lista.filter(n => {
+    const k = String(n || '').trim().toLowerCase();
+    if (!k || vistos[k]) return false;
+    vistos[k] = true;
+    return true;
+  }).slice(0, 5);
+}
+function pintarNombres() {
+  document.getElementById('nombresUsados').innerHTML =
+    nombresUsados().map(n => `<option value="${escHtml(n)}"></option>`).join('');
+}
+function recordarNombre(nombre) {
+  if (!nombre) return;
+  const lista = [nombre].concat(nombresUsados().filter(n => n.toLowerCase() !== nombre.toLowerCase())).slice(0, 5);
+  try {
+    localStorage.setItem('etv_nombre', nombre);
+    localStorage.setItem('etv_nombres', JSON.stringify(lista));
+  } catch (e) {}
+  pintarNombres();
+}
 (function () {
   const input = document.getElementById('nombreCliente');
   try { input.value = localStorage.getItem('etv_nombre') || ''; } catch (e) {}
-  input.addEventListener('change', () => {
-    try { localStorage.setItem('etv_nombre', input.value.trim()); } catch (e) {}
-  });
+  pintarNombres();
+  input.addEventListener('input', () => document.getElementById('nombreBox').classList.remove('error'));
 })();
 
 async function enviarPedido() {
@@ -1996,11 +2027,14 @@ async function enviarPedido() {
   }
   const faltaEnvio = !envioListo();
   const faltaPago  = !medioPago;
-  if (faltaEnvio || faltaPago) {
+  const faltaNombre = !document.getElementById('nombreCliente').value.trim();
+  if (faltaEnvio || faltaPago || faltaNombre) {
     if (faltaEnvio) document.getElementById('envioBox').classList.add('error');
     if (faltaPago)  document.getElementById('pagoBox').classList.add('error');
-    const primero = document.getElementById(faltaEnvio ? 'envioBox' : 'pagoBox');
+    if (faltaNombre) document.getElementById('nombreBox').classList.add('error');
+    const primero = document.getElementById(faltaEnvio ? 'envioBox' : faltaPago ? 'pagoBox' : 'nombreBox');
     primero.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (!faltaEnvio && !faltaPago) document.getElementById('nombreCliente').focus();
     return;
   }
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
@@ -2014,12 +2048,15 @@ async function enviarPedido() {
     const p = productos.find(x => String(x.id) === String(i.prodId));
     const marca = p && String(p.categoria_id) === '2' ? abrevMarca(p.marca) : '';
     const etiqueta = marca ? `[${marca}] ` : '';
-    return `${etiqueta}${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`;
+    return {
+      texto: `${etiqueta}${i.nombre} (${i.label}) x${i.qty} = ${formatPrecio(i.precio * i.qty)}`,
+      pid: i.prodId, label: i.label, nombre: etiqueta + i.nombre, cant: i.qty, precio: i.precio
+    };
   });
-  const lineas = items.map(t => `• ${t}`).join('\n');
+  const lineas = items.map(t => `• ${t.texto}`).join('\n');
   const totalTxt = `${formatPrecio(total)}${envio.texto === 'A coordinar' ? ' + envío' : ''}`;
   const nombre = document.getElementById('nombreCliente').value.trim();
-  try { localStorage.setItem('etv_nombre', nombre); } catch (e) {}
+  recordarNombre(nombre);
 
   // La ventana de WhatsApp se abre ya (si no, el celu la bloquea) y se completa al tener el número.
   const ventana = window.open('', '_blank');
@@ -2032,7 +2069,7 @@ async function enviarPedido() {
 
   const numero = await pedirNumero({
     nombre,
-    items: items.map(texto => ({ texto })),
+    items,
     subtotal,
     entrega: envio.detalle,
     envio: envio.texto,
