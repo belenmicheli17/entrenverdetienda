@@ -1497,8 +1497,10 @@ async function cargarDatos() {
       }
     }
     if (!data) throw new Error('Ninguna API respondió');
-    categorias = data.categorias || DATA_CATEGORIAS;
-    productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI');
+        const esOculta = c => String(c.activo == null ? '' : c.activo).trim().toUpperCase() === 'NO';
+    const catOcultas = new Set((data.categorias || []).filter(esOculta).map(c => String(c.id)));
+    categorias = (data.categorias || DATA_CATEGORIAS).filter(c => !esOculta(c));
+    productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI' && !catOcultas.has(String(p.categoria_id)));
     variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
     envios     = data.envios || [];
     zonas      = data.zonas  || [];
