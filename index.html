@@ -1961,7 +1961,9 @@ function renderMinimoCorreo(subtotal) {   const el = document.getElementById('zo
   actualizarCarrito();
 }
 
-// Pedidos numerados: true = numera y anota cada pedido; false = pausado (el pedido sale igual por WhatsApp) const PEDIDOS_ACTIVOS = false;  let enviandoPedido = false;
+// Pedidos numerados: true = numera y anota; false = pausado
+const PEDIDOS_ACTIVOS = false;
+let enviandoPedido = false;
 
 // Pide el número de pedido. Si tarda o falla, devuelve null y el pedido sale igual.
 async function pedirNumero(datos) {
