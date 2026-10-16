@@ -1183,7 +1183,7 @@
   }
   .nombre-box input:focus { border-color: var(--verde); }
   .nombre-box.error label { color: var(--rojo); }
-  .nombre-box.error input { border-color: var(--rojo); }
+  .nombre-box.error input { border-color: var(--rojo); }   .nombre-box.pausado { display: none !important; }
   .btn-whatsapp.enviando { opacity: 0.7; pointer-events: none; }
   .pago-box.error .envio-titulo { color: var(--rojo); }
   .pago-box.error select { border-color: var(--rojo); }
@@ -2016,7 +2016,7 @@ function recordarNombre(nombre) {
   const input = document.getElementById('nombreCliente');
   try { input.value = localStorage.getItem('etv_nombre') || ''; } catch (e) {}
     pintarNombres();
-  if (!PEDIDOS_ACTIVOS) document.querySelector('#nombreBox label').innerHTML = 'Tu nombre <span>(opcional)</span>';
+  if (!PEDIDOS_ACTIVOS) document.getElementById('nombreBox').classList.add('pausado');
   input.addEventListener('input', () => document.getElementById('nombreBox').classList.remove('error'));
 })();
 
@@ -2056,7 +2056,7 @@ async function enviarPedido() {
   });
   const lineas = items.map(t => `• ${t.texto}`).join('\n');
   const totalTxt = `${formatPrecio(total)}${envio.texto === 'A coordinar' ? ' + envío' : ''}`;
-  const nombre = document.getElementById('nombreCliente').value.trim();
+  const nombre = PEDIDOS_ACTIVOS ? document.getElementById('nombreCliente').value.trim() : '';
   recordarNombre(nombre);
 
   // La ventana de WhatsApp se abre ya (si no, el celu la bloquea) y se completa al tener el número.
