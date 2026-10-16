@@ -1959,11 +1959,11 @@ function renderMinimoCorreo(subtotal) {   const el = document.getElementById('zo
   actualizarCarrito();
 }
 
-let enviandoPedido = false;
+// Pedidos numerados: true = numera y anota cada pedido; false = pausado (el pedido sale igual por WhatsApp) const PEDIDOS_ACTIVOS = false;  let enviandoPedido = false;
 
 // Pide el número de pedido. Si tarda o falla, devuelve null y el pedido sale igual.
 async function pedirNumero(datos) {
-  if (!/^https:\/\/script\.google\.com\//.test(PEDIDOS_URL)) return null;
+  if (!PEDIDOS_ACTIVOS || !/^https:\/\/script\.google\.com\//.test(PEDIDOS_URL)) return null;
   const ctrl = new AbortController();
   const corte = setTimeout(() => ctrl.abort(), 6000);
   try {
@@ -2015,7 +2015,8 @@ function recordarNombre(nombre) {
 (function () {
   const input = document.getElementById('nombreCliente');
   try { input.value = localStorage.getItem('etv_nombre') || ''; } catch (e) {}
-  pintarNombres();
+    pintarNombres();
+  if (!PEDIDOS_ACTIVOS) document.querySelector('#nombreBox label').innerHTML = 'Tu nombre <span>(opcional)</span>';
   input.addEventListener('input', () => document.getElementById('nombreBox').classList.remove('error'));
 })();
 
@@ -2027,7 +2028,7 @@ async function enviarPedido() {
   }
   const faltaEnvio = !envioListo();
   const faltaPago  = !medioPago;
-  const faltaNombre = !document.getElementById('nombreCliente').value.trim();
+  const faltaNombre = PEDIDOS_ACTIVOS && !document.getElementById('nombreCliente').value.trim();
   if (faltaEnvio || faltaPago || faltaNombre) {
     if (faltaEnvio) document.getElementById('envioBox').classList.add('error');
     if (faltaPago)  document.getElementById('pagoBox').classList.add('error');
