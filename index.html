@@ -1702,7 +1702,7 @@ function abrirProducto(id, desdeUrl) {
     : '';
 
   document.getElementById('modalContenido').innerHTML = `
-    <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>
+    <button class="modal-cerrar" onclick="cerrarModalProducto()">✕</button>     <button class="modal-compartir" onclick="compartirProducto(${prod.id}, this)" aria-label="Compartir producto" title="Compartir">       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>     </button>
     <div class="modal-foto-wrap">
       ${fotoHtml}
       <div class="modal-foto-placeholder" style="display:${prod.foto_url?'none':'block'}">${emoji}</div>
@@ -2249,7 +2249,7 @@ function slugProducto(p) {
   return base.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-let urlProductoAbierta = false;
+async function compartirProducto(id, btn) {   const prod = productos.find(p => String(p.id) === String(id));   if (!prod) return;   const url = location.origin + location.pathname + '?producto=' + slugProducto(prod);   const titulo = prod.nombre + (prod.marca ? ' · ' + prod.marca : '');   const texto = 'Mirá este producto de En Tren Verde: ' + titulo;    if (navigator.share) {     try { await navigator.share({ title: titulo, text: texto, url: url }); } catch (e) {}     return;   }   try {     await navigator.clipboard.writeText(url);     const original = btn.innerHTML;     btn.innerHTML = '<span style="font-size:.72rem;font-weight:600;white-space:nowrap;color:var(--verde)">Copiado ✓</span>';     btn.style.width = 'auto';     btn.style.padding = '0 12px';     btn.style.borderRadius = '16px';     setTimeout(() => {       btn.innerHTML = original;       btn.style.width = '';       btn.style.padding = '';       btn.style.borderRadius = '';     }, 1800);   } catch (e) {     prompt('Copiá este enlace:', url);   } }  let urlProductoAbierta = false;
 function abrirDesdeUrl() {
   if (urlProductoAbierta) return;
   const slug = new URLSearchParams(location.search).get('producto');
