@@ -1234,7 +1234,7 @@
     margin-top: 6px; padding: 8px 10px; background: #FFF5F5; border: 1.5px solid var(--rojo);
     border-radius: 8px; color: var(--rojo); font-size: 0.9rem; line-height: 1.4;
   }
-    /* ── CARRITO EN 2 COLUMNAS (solo PC) ── */
+    /* ── CÓDIGO DE DESCUENTO ── */ .codigo-box { display: flex; flex-direction: column; gap: 8px; } .codigo-fila { display: flex; gap: 6px; } .codigo-fila input {   flex: 1; min-width: 0; padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px;   font-family: 'Inter', sans-serif; font-size: 16px; text-transform: uppercase; outline: none; background: var(--blanco); } .codigo-fila input:focus { border-color: var(--verde); } .codigo-fila input:disabled { background: var(--verde-claro); color: var(--verde); font-weight: 600; } .codigo-fila button {   padding: 0 16px; border: 1.5px solid var(--verde); border-radius: 10px; background: var(--blanco);   color: var(--verde); font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;   cursor: pointer; transition: all 0.2s; } .codigo-fila button:hover { background: var(--verde-claro); } .codigo-fila button:disabled { opacity: 0.5; cursor: default; pointer-events: none; } .codigo-msg { font-size: 0.9rem; line-height: 1.4; } .codigo-msg.ok { color: var(--verde); font-weight: 600; } .codigo-msg.no { color: var(--rojo); } .codigo-quitar {   background: none; border: none; color: var(--texto-suave); text-decoration: underline;   cursor: pointer; font-size: 0.85rem; font-family: 'Inter', sans-serif; margin-left: 6px; } .codigo-quitar:hover { color: var(--rojo); }  /* ── CARRITO EN 2 COLUMNAS (solo PC) ── */
   @media (min-width: 900px) {
     .carrito-panel {
       width: min(860px, 100vw);
@@ -1485,7 +1485,7 @@ let zonaManual = '';
 let sugerenciasActuales = [];
   let puntoRetiro = '';
   let sugIndex = -1;
-  let medioPago = '';
+  let medioPago = ''; let descuentos = []; let codigoAplicado = ''; let codigoError = '';
          
   
 async function cargarDatos() {
@@ -1522,10 +1522,10 @@ async function cargarDatos() {
     productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI' && !catOcultas.has(String(p.categoria_id)));
     variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
     envios     = data.envios || [];
-    zonas      = data.zonas  || [];
+    zonas      = data.zonas  || [];     descuentos = data.descuentos || [];
     actualizarTicker();
     try {
-      localStorage.setItem('etv_cache', JSON.stringify({categorias, productos, variantes, envios, zonas}));
+      localStorage.setItem('etv_cache', JSON.stringify({categorias, productos, variantes, envios, zonas, descuentos}));
     } catch(e) {}
   } catch(e) {
     console.warn('API no disponible, usando datos locales:', e.message);
@@ -2071,7 +2071,7 @@ async function enviarPedido() {
     document.getElementById('zonaResultado').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
-  const total = subtotal + envio.monto;
+  const desc = calcularDescuento();   const descMonto = desc ? desc.monto : 0;   const total = subtotal - descMonto + envio.monto;
   const items = carrito.map(i => {
     const p = productos.find(x => String(x.id) === String(i.prodId));
     const marca = p && String(p.categoria_id) === '2' ? abrevMarca(p.marca) : '';
@@ -2116,6 +2116,7 @@ async function enviarPedido() {
     encabezado +
     `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n` +
     `Subtotal: ${formatPrecio(subtotal)}\n` +
+    (descMonto > 0 ? `*Descuento (código ${desc.codigo} · ${pctTxt(desc.pct)}%):* -${formatPrecio(descMonto)}\n` : '') +
     `*Entrega:* ${envio.detalle}\n` +
     `Envío: ${envio.texto}\n` +
     `*Pago:* ${medioPago}\n` +
