@@ -2118,7 +2118,7 @@ async function enviarPedido() {
     encabezado +
     `Hola! Quiero hacer el siguiente pedido:\n\n${lineas}\n\n` +
     `Subtotal: ${formatPrecio(subtotal)}\n` +
-    (descMonto > 0 ? `*Descuento (código ${desc.codigo} · ${pctTxt(desc.pct)}%):* -${formatPrecio(descMonto)}\n` : '') +
+   (descMonto > 0 ? `*Descuento código ${pctTxt(desc.pct)}% off:* -${formatPrecio(descMonto)}\n` : '') +
     `*Entrega:* ${envio.detalle}\n` +
     `Envío: ${envio.texto}\n` +
     `*Pago:* ${medioPago}\n` +
