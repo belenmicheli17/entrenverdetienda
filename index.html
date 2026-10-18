@@ -1677,7 +1677,7 @@ function renderTarjeta(prod) {
   </div>`;
 }
 
-function abrirProducto(id) {
+function abrirProducto(id, desdeUrl) {
   const prod = productos.find(p => String(p.id) === String(id));
   if (!prod) return;
   const vars  = variantes.filter(v => String(v.producto_id) === String(id));
@@ -1715,7 +1715,7 @@ function abrirProducto(id) {
       <div class="modal-variantes">${botonesVar}</div>
     </div>`;
 
-  document.getElementById('modalProducto').classList.add('abierto');
+  document.getElementById('modalProducto').classList.add('abierto');   if (!desdeUrl) history.pushState({ prod: prod.id }, '', '?producto=' + slugProducto(prod));   document.title = prod.nombre + (prod.marca ? ' · ' + prod.marca : '') + ' · En Tren Verde';
   document.body.style.overflow = 'hidden';
 }
 
@@ -2236,7 +2236,7 @@ function toastAbrirCarrito() {
   if (!panel.classList.contains('abierto')) toggleCarrito();
 }
 
-cargarDatos();
+cargarDatos().then(abrirDesdeUrl);
 </script>
 </body>
 </html>
