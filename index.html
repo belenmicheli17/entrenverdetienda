@@ -1384,11 +1384,11 @@
       <datalist id="nombresUsados"></datalist>
     </div>
     </div>
-      <div class="aviso-gratis" id="avisoGratis" style="display:none"></div>
+      <div class="codigo-box" id="codigoBox" style="display:none">       <div class="envio-titulo">¿Tenés un código de descuento?</div>       <div class="codigo-fila">         <input type="text" id="codigoInput" maxlength="30" placeholder="Escribí tu código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarCodigo();}">         <button type="button" id="codigoBtn" onclick="aplicarCodigo()">Aplicar</button>       </div>       <div class="codigo-msg" id="codigoMsg"></div>     </div>     <div class="aviso-gratis" id="avisoGratis" style="display:none"></div>
     <div class="envio-row" id="envioRow" style="display:none">
       <span>Envío</span><span id="envioMonto"></span>
     </div>
-    <div class="total-row">
+    <div class="envio-row" id="descuentoRow" style="display:none">       <span id="descuentoLabel">Descuento</span><span id="descuentoMonto" style="color:var(--verde);font-weight:600"></span>     </div>     <div class="total-row">
       <span class="total-label">Total</span>
       <span class="total-monto" id="totalMonto">$0</span>
     </div>
@@ -1497,7 +1497,7 @@ async function cargarDatos() {
       productos  = cached.productos;
       variantes  = cached.variantes;
       envios     = cached.envios || [];
-      zonas      = cached.zonas  || [];
+      zonas      = cached.zonas  || [];       descuentos = cached.descuentos || [];
       actualizarTicker();
       renderCategorias();
       renderProductos();
@@ -1786,7 +1786,9 @@ function actualizarCarrito() {
   } else {
     envioRow.style.display = 'none';
   }
-  document.getElementById('totalMonto').textContent = formatPrecio(subtotal + (envio ? envio.monto : 0));
+  const desc = calcularDescuento();
+  renderCodigo(count, desc);
+  document.getElementById('totalMonto').textContent = formatPrecio(subtotal - (desc ? desc.monto : 0) + (envio ? envio.monto : 0));
   if (tipoEnvio === 'moto') renderZonaResultado(subtotal);   if (tipoEnvio === 'correo') renderMinimoCorreo(subtotal);
   const aviso = document.getElementById('avisoGratis');
   if (count > 0 && envio && envio.gratis && !envio.esGratis) {
@@ -2177,6 +2179,115 @@ function precioSugerencia(z) {
 
 document.getElementById('pagoSelector').innerHTML =
   crearSelector('pago', '💳 Elegí el medio de pago', ['Efectivo', 'Transferencia'], elegirPago);
+
+// ── CÓDIGO DE DESCUENTO ──
+function hoyISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function fechaISO(v) {
+  const s = String(v || '').trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+  return '';
+}
+
+function porcentajeDe(d) {
+  let n = parseFloat(String(d.porcentaje).replace('%', '').replace(',', '.'));
+  if (isNaN(n) || n <= 0) return 0;
+  if (n < 1) n = n * 100;
+  return Math.min(n, 100);
+}
+
+function pctTxt(p) {
+  return String(Math.round(p * 10) / 10).replace('.', ',');
+}
+
+function descuentoVigente(d) {
+  if (String(d.activo).trim().toUpperCase() !== 'SI') return false;
+  if (!String(d.codigo || '').trim() || !porcentajeDe(d)) return false;
+  const hoy = hoyISO();
+  const desde = fechaISO(d.desde), hasta = fechaISO(d.hasta);
+  if (desde && hoy < desde) return false;
+  if (hasta && hoy > hasta) return false;
+  return true;
+}
+
+function buscarDescuento(codigo) {
+  const c = normalizar(codigo);
+  if (!c) return null;
+  return descuentos.find(d => normalizar(d.codigo) === c && descuentoVigente(d)) || null;
+}
+
+function baseDescontable() {
+  return carrito.reduce((s, i) => {
+    const v = variantes.find(x => String(x.producto_id) === String(i.prodId) && String(x.cantidad_label) === String(i.label));
+    const enOferta = v && String(v.oferta_semana).toUpperCase() === 'SI';
+    return enOferta ? s : s + i.precio * i.qty;
+  }, 0);
+}
+
+function calcularDescuento() {
+  if (!codigoAplicado) return null;
+  const d = buscarDescuento(codigoAplicado);
+  if (!d) return null;
+  const pct = porcentajeDe(d);
+  return { codigo: String(d.codigo).trim().toUpperCase(), pct, monto: Math.round(baseDescontable() * pct / 100) };
+}
+
+function aplicarCodigo() {
+  const valor = document.getElementById('codigoInput').value.trim();
+  if (!valor) { codigoAplicado = ''; codigoError = 'Escribí tu código.'; }
+  else if (buscarDescuento(valor)) { codigoAplicado = valor; codigoError = ''; }
+  else { codigoAplicado = ''; codigoError = 'Ese código no es válido o ya venció.'; }
+  actualizarCarrito();
+}
+
+function quitarCodigo() {
+  codigoAplicado = '';
+  codigoError = '';
+  document.getElementById('codigoInput').value = '';
+  actualizarCarrito();
+}
+
+function renderCodigo(count, desc) {
+  const box   = document.getElementById('codigoBox');
+  const msg   = document.getElementById('codigoMsg');
+  const input = document.getElementById('codigoInput');
+  const btn   = document.getElementById('codigoBtn');
+  if (codigoAplicado && !desc) { codigoAplicado = ''; codigoError = 'Ese código ya no está vigente.'; }
+  box.style.display = count > 0 && (descuentos.some(descuentoVigente) || codigoAplicado) ? 'flex' : 'none';
+
+  const row = document.getElementById('descuentoRow');
+  if (desc) {
+    input.disabled = true;
+    btn.disabled = true;
+    if (desc.monto > 0) {
+      msg.className = 'codigo-msg ok';
+      msg.innerHTML = '✓ Código ' + escHtml(desc.codigo) + ': ' + pctTxt(desc.pct) + '% de descuento <button type="button" class="codigo-quitar" onclick="quitarCodigo()">Quitar</button>';
+    } else {
+      msg.className = 'codigo-msg no';
+      msg.innerHTML = 'El código ' + escHtml(desc.codigo) + ' no se aplica a productos en oferta. Sumá otros productos para usarlo. <button type="button" class="codigo-quitar" onclick="quitarCodigo()">Quitar</button>';
+    }
+  } else {
+    input.disabled = false;
+    btn.disabled = false;
+    msg.className = codigoError ? 'codigo-msg no' : 'codigo-msg';
+    msg.textContent = codigoError;
+  }
+
+  if (desc && desc.monto > 0 && count > 0) {
+    row.style.display = 'flex';
+    document.getElementById('descuentoLabel').textContent = 'Descuento (' + desc.codigo + ' · ' + pctTxt(desc.pct) + '%)';
+    document.getElementById('descuentoMonto').textContent = '−' + formatPrecio(desc.monto);
+  } else {
+    row.style.display = 'none';
+  }
+}
+
 function vaciarCarrito() {
   if (!confirm('¿Querés vaciar el carrito?')) return;
   carrito = [];
