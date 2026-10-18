@@ -1719,9 +1719,13 @@ function abrirProducto(id, desdeUrl) {
   document.body.style.overflow = 'hidden';
 }
 
-function cerrarModalProducto() {
+function cerrarModalProducto(desdePopstate) {
   document.getElementById('modalProducto').classList.remove('abierto');
   document.body.style.overflow = '';
+  document.title = TITULO_BASE;
+  if (desdePopstate) return;
+  if (history.state && history.state.prod) history.back();
+  else if (location.search.includes('producto=')) history.replaceState(null, '', location.pathname);
 }
 
 function agregarAlCarrito(prodId, label, precio, nombre) {
@@ -2236,6 +2240,32 @@ function toastAbrirCarrito() {
   if (!panel.classList.contains('abierto')) toggleCarrito();
 }
 
+// ── Link propio por producto (?producto=nombre-marca) ──
+const TITULO_BASE = document.title;
+
+function slugProducto(p) {
+  const n = normalizar(p.nombre), m = normalizar(p.marca);
+  const base = m && !n.includes(m) ? n + ' ' + m : n;
+  return base.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+let urlProductoAbierta = false;
+function abrirDesdeUrl() {
+  if (urlProductoAbierta) return;
+  const slug = new URLSearchParams(location.search).get('producto');
+  if (!slug) return;
+  const prod = productos.find(p => slugProducto(p) === slug);
+  if (!prod) return;
+  urlProductoAbierta = true;
+  abrirProducto(prod.id, true);
+}
+
+window.addEventListener('popstate', e => {
+  const abierto = document.getElementById('modalProducto').classList.contains('abierto');
+  if (e.state && e.state.prod) abrirProducto(e.state.prod, true);
+  else if (abierto) cerrarModalProducto(true);
+});
+  
 cargarDatos().then(abrirDesdeUrl);
 </script>
 </body>
