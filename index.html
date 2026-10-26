@@ -1518,7 +1518,7 @@ async function cargarDatos() {
     if (!data) throw new Error('Ninguna API respondió');
         const esOculta = c => String(c.activo == null ? '' : c.activo).trim().toUpperCase() === 'NO';
     const catOcultas = new Set((data.categorias || []).filter(esOculta).map(c => String(c.id)));
-    categorias = (data.categorias || DATA_CATEGORIAS).filter(c => !esOculta(c));
+    categorias = (data.categorias || DATA_CATEGORIAS).filter(c => !esOculta(c))       .sort((a, b) => (parseInt(a.orden, 10) || 999) - (parseInt(b.orden, 10) || 999));
     productos  = (data.productos || DATA_PRODUCTOS).filter(p => String(p.activo).toUpperCase() === 'SI' && !catOcultas.has(String(p.categoria_id)));
     variantes  = (data.variantes || DATA_VARIANTES).filter(v => String(v.activo).toUpperCase() === 'SI');
     envios     = data.envios || [];
