@@ -1631,7 +1631,7 @@ function renderProductos() {
     );
   }
 
- const destacados = prods.filter(p => p.mas_vendidos?.toString().toUpperCase() === 'SI');
+ const sinStockN = p => String(p.stock).toUpperCase() === 'NO' ? 1 : 0;   prods = prods.slice().sort((a, b) => sinStockN(a) - sinStockN(b));   const destacados = prods.filter(p => p.mas_vendidos?.toString().toUpperCase() === 'SI');
 const resto      = prods.filter(p => p.mas_vendidos?.toString().toUpperCase() !== 'SI');
 
   let html = '';
