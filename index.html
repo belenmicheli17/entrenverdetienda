@@ -1252,6 +1252,14 @@
     }
   }
     /* ── CARRITO MÓVIL: un solo scroll ── */
+  .pie-fino {
+    text-align: center;
+    padding: 14px 16px 22px;
+    font-size: .78rem;
+    color: var(--texto-suave);
+  }
+  .pie-fino a { color: var(--verde); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .pie-fino a:hover { color: var(--verde-medio); }
   @media (max-width: 899px) {
     .carrito-panel { overflow-y: auto; overscroll-behavior: contain; }
     .carrito-header { position: sticky; top: 0; z-index: 2; }
@@ -1342,6 +1350,10 @@
     </div>
   </div>
 </main>
+
+<footer class="pie-fino">
+  ¿Te gustaría tener una página como esta? <a href="https://wa.me/5491134801708?text=Hola!%20Vi%20la%20tienda%20de%20En%20Tren%20Verde%20y%20me%20gustar%C3%ADa%20tener%20una%20p%C3%A1gina%20as%C3%AD." target="_blank" rel="noopener">Escribime acá</a>
+</footer>
 
 <!-- TOAST -->
 <div class="toast" id="toast" onclick="toastAbrirCarrito()">✓ Añadido al carrito</div>
@@ -1436,6 +1448,9 @@ const EMOJIS_CAT = {
   'Frutos secos y deshidratados': '🌰',
   'Azucar': '🍬',
   'Mantecas': '🧈',
+  'Yogurt': '🥛',
+  'Yogures': '🥛',
+  'Yogur': '🥛',
   'Otros': '📦',
 };
 
@@ -1474,7 +1489,15 @@ const DATA_VARIANTES = [];
 let categorias = [];
 let productos  = [];
 let variantes  = [];
-let carrito    = (() => { try { const c = JSON.parse(localStorage.getItem('etv_carrito') || '[]'); return Array.isArray(c) ? c : []; } catch (e) { return []; } })();
+const CARRITO_VIGENCIA_MS = 2 * 60 * 60 * 1000; // el carrito guardado dura 2 horas
+let carrito    = (() => {
+  try {
+    const g = JSON.parse(localStorage.getItem('etv_carrito') || 'null');
+    if (g && Array.isArray(g.items) && Date.now() - g.t < CARRITO_VIGENCIA_MS) return g.items;
+    localStorage.removeItem('etv_carrito');
+  } catch (e) {}
+  return [];
+})();
 let categoriaActiva = 'all';
 let busqueda   = '';
 let envios = [];
@@ -1768,7 +1791,10 @@ function cambiarCantidad(key, delta) {
 }
 
 function actualizarCarrito() {
-  try { localStorage.setItem('etv_carrito', JSON.stringify(carrito)); } catch (e) {}
+  try {
+    if (carrito.length) localStorage.setItem('etv_carrito', JSON.stringify({ t: Date.now(), items: carrito }));
+    else localStorage.removeItem('etv_carrito');
+  } catch (e) {}
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
   const count    = carrito.reduce((s, i) => s + i.qty, 0);
 
@@ -2292,6 +2318,21 @@ function renderCodigo(count, desc) {
 function vaciarCarrito() {
   if (!confirm('¿Querés vaciar el carrito?')) return;
   carrito = [];
+  // Borra también lo que se había elegido: entrega, pago y código
+  tipoEnvio = ''; zonaSel = null; zonaManual = ''; puntoRetiro = '';
+  sugerenciasActuales = []; sugIndex = -1;
+  medioPago = ''; codigoAplicado = ''; codigoError = '';
+  document.querySelectorAll('.envio-opcion').forEach(b => b.classList.remove('activa'));
+  const det = document.getElementById('envioDetalle'); if (det) det.innerHTML = '';
+  const ci = document.getElementById('codigoInput'); if (ci) ci.value = '';
+  const sp = document.getElementById('sel-pago');
+  if (sp) {
+    sp.classList.remove('elegido', 'abierto');
+    sp.querySelector('.selector-valor').textContent = '💳 Elegí el medio de pago';
+    sp.querySelectorAll('.zona-sug').forEach(b => b.classList.remove('activa'));
+  }
+  ['envioBox', 'pagoBox'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('error'); });
+  try { localStorage.removeItem('etv_carrito'); } catch (e) {}
   actualizarCarrito();
 }
   
