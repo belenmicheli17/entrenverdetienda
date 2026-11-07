@@ -1474,7 +1474,7 @@ const DATA_VARIANTES = [];
 let categorias = [];
 let productos  = [];
 let variantes  = [];
-let carrito    = [];
+let carrito    = (() => { try { const c = JSON.parse(localStorage.getItem('etv_carrito') || '[]'); return Array.isArray(c) ? c : []; } catch (e) { return []; } })();
 let categoriaActiva = 'all';
 let busqueda   = '';
 let envios = [];
@@ -1768,6 +1768,7 @@ function cambiarCantidad(key, delta) {
 }
 
 function actualizarCarrito() {
+  try { localStorage.setItem('etv_carrito', JSON.stringify(carrito)); } catch (e) {}
   const subtotal = carrito.reduce((s, i) => s + i.precio * i.qty, 0);
   const count    = carrito.reduce((s, i) => s + i.qty, 0);
 
@@ -2089,7 +2090,7 @@ async function enviarPedido() {
   recordarNombre(nombre);
 
   // La ventana de WhatsApp se abre ya (si no, el celu la bloquea) y se completa al tener el número.
-  const ventana = window.open('', '_blank');
+  const ventana = PEDIDOS_ACTIVOS ? window.open('', '_blank') : null;
   if (ventana) {
     try { ventana.document.write('<p style="font-family:sans-serif;padding:24px">Preparando tu pedido…</p>'); } catch (e) {}
   }
@@ -2397,6 +2398,7 @@ window.addEventListener('popstate', e => {
   else if (abierto) cerrarModalProducto(true);
 });
   
+actualizarCarrito();
 cargarDatos().then(abrirDesdeUrl);
 </script>
 </body>
