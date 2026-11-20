@@ -2085,6 +2085,7 @@ function elegirEnvio(tipo) {
   puntoRetiro = '';
   correoProv = ''; correoLoc = ''; correoSuc = null;
   sugerenciasActuales = [];
+  renderPago();
   document.querySelectorAll('.envio-opcion').forEach(b => b.classList.toggle('activa', b.dataset.tipo === tipo));
   document.getElementById('envioBox').classList.remove('error');
 
@@ -2446,8 +2447,22 @@ function precioSugerencia(z) {
   return gratis > 0 && subtotal >= gratis ? 'Gratis' : formatPrecio(parsePrecio(env.precio));
 }
 
-document.getElementById('pagoSelector').innerHTML =
-  crearSelector('pago', '💳 Elegí el medio de pago', ['Efectivo (contra entrega)', 'Transferencia (previo al envío)'], elegirPago);
+// Medios de pago: por Correo (Vía Cargo) solo transferencia
+const PAGO_EFECTIVO = 'Efectivo (contra entrega)', PAGO_TRANSF = 'Transferencia (previo al envío)';
+function renderPago() {
+  const soloTransf = tipoEnvio === 'correo';
+  const opciones = soloTransf ? [PAGO_TRANSF] : [PAGO_EFECTIVO, PAGO_TRANSF];
+  if (soloTransf) medioPago = PAGO_TRANSF;
+  document.getElementById('pagoSelector').innerHTML = crearSelector('pago', '💳 Elegí el medio de pago', opciones, elegirPago) +
+    (soloTransf ? '<div class="correo-nota">Para envíos por Correo el pago es solo por transferencia.</div>' : '');
+  if (medioPago) {
+    const el = document.getElementById('sel-pago');
+    el.querySelector('.selector-valor').textContent = medioPago;
+    el.classList.add('elegido');
+    el.querySelectorAll('.zona-sug').forEach((b, j) => b.classList.toggle('activa', opciones[j] === medioPago));
+  }
+}
+renderPago();
 
 // ── CÓDIGO DE DESCUENTO ──
 function hoyISO() {
@@ -2567,12 +2582,7 @@ function vaciarCarrito() {
   document.querySelectorAll('.envio-opcion').forEach(b => b.classList.remove('activa'));
   const det = document.getElementById('envioDetalle'); if (det) det.innerHTML = '';
   const ci = document.getElementById('codigoInput'); if (ci) ci.value = '';
-  const sp = document.getElementById('sel-pago');
-  if (sp) {
-    sp.classList.remove('elegido', 'abierto');
-    sp.querySelector('.selector-valor').textContent = '💳 Elegí el medio de pago';
-    sp.querySelectorAll('.zona-sug').forEach(b => b.classList.remove('activa'));
-  }
+  renderPago();
   ['envioBox', 'pagoBox', 'edadBox'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('error'); });
   const ec = document.getElementById('edadCheck'); if (ec) ec.checked = false;
   try { localStorage.removeItem('etv_carrito'); } catch (e) {}
