@@ -1214,6 +1214,13 @@
   .envio-opcion.activa { border-color: var(--verde); background: var(--verde-claro); color: var(--verde); }
   .envio-box.error .envio-opcion { border-color: var(--rojo); }
   .envio-detalle { font-size: 0.95rem; color: var(--texto-suave); line-height: 1.4; }
+  /* Correo (Vía Cargo): provincia → localidad → sucursal */
+  .correo-aviso { font-weight: 600; color: var(--verde); margin-bottom: 8px; }
+  .correo-paso { margin-top: 8px; }
+  .correo-paso .selector-valor { text-align: left; }
+  .sucursal-card { margin-top: 10px; padding: 10px 12px; border: 1.5px solid var(--verde); border-radius: 10px; background: var(--verde-claro); color: var(--texto); font-size: 0.9rem; line-height: 1.45; }
+  .sucursal-card strong { display: block; font-size: 0.95rem; }
+  .correo-nota { margin-top: 8px; font-size: 0.85rem; }
   .zona-buscador input {
     width: 100%; padding: 9px 12px; border: 1.5px solid var(--borde); border-radius: 10px;
     font-family: 'Inter', sans-serif; font-size: 16px; outline: none;
@@ -1294,7 +1301,7 @@
   .selector.elegido .selector-btn { color: var(--texto); font-weight: 600; }
   .selector-btn svg { flex-shrink: 0; transition: transform 0.2s; }
   .selector.abierto .selector-btn svg { transform: rotate(180deg); }
-  .selector-lista { display: none; }
+  .selector-lista { display: none; max-height: 260px; overflow-y: auto; }
   .selector.abierto .selector-lista { display: flex; }
   .envio-box.error .selector-btn, .pago-box.error .selector-btn { border-color: var(--rojo); }
   .zona-sug.activa { background: var(--verde-claro); }
@@ -1459,7 +1466,7 @@
       <div class="envio-opciones">
         <button class="envio-opcion" data-tipo="retiro" onclick="elegirEnvio('retiro')"><span class="eo-icono">🏠</span>Retiro</button>
         <button class="envio-opcion" data-tipo="moto" onclick="elegirEnvio('moto')"><span class="eo-icono">🛵</span>Envío AMBA</button>
-        <button class="envio-opcion" data-tipo="correo" onclick="elegirEnvio('correo')"><span class="eo-icono">📦</span>Correo</button>
+        <button class="envio-opcion" data-tipo="correo" onclick="elegirEnvio('correo')"><span class="eo-icono">📦</span>Correo <span style="white-space:nowrap">(Vía Cargo)</span></button>
       </div>
       <div class="envio-detalle" id="envioDetalle"></div>
     </div>
@@ -2019,7 +2026,7 @@ function actualizarCarrito() {
   }
 
   const btnWa = document.getElementById('btnWhatsapp');
-    const faltan = [];   if (!envioListo()) {     faltan.push(tipoEnvio === 'moto' ? 'tu barrio o localidad (elegilo de la lista)'               : tipoEnvio === 'retiro' ? 'dónde retirar'               : 'cómo querés recibir tu pedido');   }   if (!medioPago) faltan.push('el medio de pago');   document.getElementById('edadBox').style.display = count > 0 && hayAlcohol() ? 'flex' : 'none';   if (faltaEdad()) faltan.push('confirmar que sos mayor de 18 años');   const aviso2 = document.getElementById('faltaAviso');   aviso2.textContent = faltan.length ? 'Para enviar el pedido falta: ' + (faltan.length > 1 ? faltan.slice(0, -1).join(', ') + ' y ' + faltan[faltan.length - 1] : faltan[0]) + '.' : '';   aviso2.style.display = count > 0 && faltan.length ? 'block' : 'none';   btnWa.classList.toggle('deshabilitado', count > 0 && (faltan.length > 0 || (envio && envio.bajoMinimo)));
+    const faltan = [];   if (!envioListo()) {     faltan.push(tipoEnvio === 'moto' ? 'tu barrio o localidad (elegilo de la lista)'               : tipoEnvio === 'retiro' ? 'dónde retirar'               : tipoEnvio === 'correo' ? 'la sucursal de Vía Cargo'               : 'cómo querés recibir tu pedido');   }   if (!medioPago) faltan.push('el medio de pago');   document.getElementById('edadBox').style.display = count > 0 && hayAlcohol() ? 'flex' : 'none';   if (faltaEdad()) faltan.push('confirmar que sos mayor de 18 años');   const aviso2 = document.getElementById('faltaAviso');   aviso2.textContent = faltan.length ? 'Para enviar el pedido falta: ' + (faltan.length > 1 ? faltan.slice(0, -1).join(', ') + ' y ' + faltan[faltan.length - 1] : faltan[0]) + '.' : '';   aviso2.style.display = count > 0 && faltan.length ? 'block' : 'none';   btnWa.classList.toggle('deshabilitado', count > 0 && (faltan.length > 0 || (envio && envio.bajoMinimo)));
   btnWa.onclick = function(e) {
     e.preventDefault();
     enviarPedido();
@@ -2037,7 +2044,7 @@ function nombreZona(z) {
 
 function envioListo() {
   if (tipoEnvio === 'retiro') return !!puntoRetiro;
-  if (tipoEnvio === 'correo') return true;
+  if (tipoEnvio === 'correo') return !!correoSuc;
   if (tipoEnvio === 'moto') return !!zonaSel;
   return false;
 }
@@ -2047,7 +2054,7 @@ function calcularEnvio(subtotal) {
     return { monto: 0, texto: 'Sin costo', detalle: `Retiro por ${puntoRetiro || 'a definir'} (coordinamos el día)` };
   }
   if (tipoEnvio === 'correo') {
-    const envC = envios.find(e => String(e.nivel) === '5');     const minimoC = envC ? parsePrecio(envC.minimo_desde) : 0;     return { monto: 0, texto: 'A coordinar', detalle: 'Envío por correo (a cotizar)', minimo: minimoC, bajoMinimo: minimoC > 0 && subtotal < minimoC };
+    const envC = envios.find(e => String(e.nivel) === '5');     const minimoC = envC ? parsePrecio(envC.minimo_desde) : 0;     return { monto: 0, texto: 'A coordinar', detalle: correoSuc ? `Correo Vía Cargo (a cotizar) · Retira en sucursal ${correoSuc.nombre}, ${correoSuc.direccion}, ${correoSuc.localidad}, ${correoSuc.provincia}` : 'Correo Vía Cargo (a cotizar)', minimo: minimoC, bajoMinimo: minimoC > 0 && subtotal < minimoC };
   }
   if (tipoEnvio === 'moto') {
     if (zonaSel) {
@@ -2076,6 +2083,7 @@ function elegirEnvio(tipo) {
   zonaSel = null;
   zonaManual = '';
   puntoRetiro = '';
+  correoProv = ''; correoLoc = ''; correoSuc = null;
   sugerenciasActuales = [];
   document.querySelectorAll('.envio-opcion').forEach(b => b.classList.toggle('activa', b.dataset.tipo === tipo));
   document.getElementById('envioBox').classList.remove('error');
@@ -2086,7 +2094,11 @@ function elegirEnvio(tipo) {
       crearSelector('retiro', '📍 Elegí dónde retirar', PUNTOS_RETIRO, elegirRetiro) +
       '<div style="margin-top:6px">Coordinamos el día por WhatsApp.</div>';
   } else if (tipo === 'correo') {
-    detalle.innerHTML = '📦 Para envíos fuera de AMBA. El costo se cotiza según tu destino y lo coordinamos por WhatsApp.<div id="zonaResultado"></div>';
+    detalle.innerHTML = `<div class="correo-aviso">Únicamente para envíos fuera de CABA y GBA.</div>
+      <div id="correoPasos"><div class="correo-paso">Cargando sucursales…</div></div>
+      <div class="correo-nota">Retirás en la sucursal de Vía Cargo que elijas. El costo se cotiza según el destino y lo coordinamos por WhatsApp.</div>
+      <div id="zonaResultado"></div>`;
+    cargarViaCargo().then(renderCorreo);
   } else {
     detalle.innerHTML = `
       <div class="zona-buscador">
@@ -2096,6 +2108,58 @@ function elegirEnvio(tipo) {
       </div>`;
   }
   actualizarCarrito();
+}
+
+// ── CORREO VÍA CARGO: la lista de sucursales está en viacargo.json (se carga solo al elegir Correo) ──
+let VIACARGO = null, correoProv = '', correoLoc = '', correoSuc = null;
+const ordenAR = (a, b) => a.localeCompare(b, 'es');
+function cargarViaCargo() {
+  if (VIACARGO) return Promise.resolve(VIACARGO);
+  return fetch('viacargo.json').then(r => r.json()).then(d => (VIACARGO = d)).catch(() => null);
+}
+function renderCorreo() {
+  const cont = document.getElementById('correoPasos');
+  if (!cont || tipoEnvio !== 'correo') return;
+  if (!VIACARGO) { cont.innerHTML = '<div class="correo-paso">No pudimos cargar las sucursales. Escribinos por WhatsApp y te ayudamos.</div>'; return; }
+  let html = '<div class="correo-paso">' + crearSelector('vcProv', '🗺️ Elegí tu provincia', Object.keys(VIACARGO).sort(ordenAR), elegirProvCorreo) + '</div>';
+  if (correoProv) {
+    html += '<div class="correo-paso">' + crearSelector('vcLoc', '📍 Elegí tu localidad', Object.keys(VIACARGO[correoProv]).sort(ordenAR), elegirLocCorreo) + '</div>';
+  }
+  if (correoLoc) {
+    const lista = VIACARGO[correoProv][correoLoc];
+    if (lista.length > 1) {
+      html += '<div class="correo-paso">' + crearSelector('vcSuc', '🏤 Elegí la sucursal', lista.map(s => `${s[0]} · ${s[1]}`), elegirSucCorreo) + '</div>';
+    }
+  }
+  if (correoSuc) {
+    html += `<div class="sucursal-card"><strong>${escHtml(correoSuc.nombre)}</strong>${escHtml(correoSuc.direccion)}<br>${escHtml(correoSuc.localidad)}, ${escHtml(correoSuc.provincia)}${correoSuc.tel ? '<br>Tel: ' + escHtml(correoSuc.tel) : ''}</div>`;
+  }
+  cont.innerHTML = html;
+  // Mostrar lo ya elegido en cada selector
+  const marcar = (id, valor) => {
+    const el = document.getElementById('sel-' + id);
+    if (!el || !valor) return;
+    el.querySelector('.selector-valor').textContent = valor;
+    el.classList.add('elegido');
+  };
+  marcar('vcProv', correoProv);
+  marcar('vcLoc', correoLoc);
+  if (correoSuc && VIACARGO[correoProv][correoLoc].length > 1) marcar('vcSuc', `${correoSuc.nombre} · ${correoSuc.direccion}`);
+}
+function sucDesde(s) { return { nombre: s[0], direccion: s[1], tel: s[2], localidad: correoLoc, provincia: correoProv }; }
+function elegirProvCorreo(v) { correoProv = v; correoLoc = ''; correoSuc = null; renderCorreo(); actualizarCarrito(); }
+function elegirLocCorreo(v) {
+  correoLoc = v;
+  const lista = VIACARGO[correoProv][correoLoc];
+  correoSuc = lista.length === 1 ? sucDesde(lista[0]) : null;
+  document.getElementById('envioBox').classList.remove('error');
+  renderCorreo(); actualizarCarrito();
+}
+function elegirSucCorreo(v) {
+  const s = VIACARGO[correoProv][correoLoc].find(x => `${x[0]} · ${x[1]}` === v);
+  correoSuc = s ? sucDesde(s) : null;
+  document.getElementById('envioBox').classList.remove('error');
+  renderCorreo(); actualizarCarrito();
 }
 
 function elegirRetiro(valor) {
@@ -2497,7 +2561,7 @@ function vaciarCarrito() {
   if (!confirm('¿Querés vaciar el carrito?')) return;
   carrito = [];
   // Borra también lo que se había elegido: entrega, pago y código
-  tipoEnvio = ''; zonaSel = null; zonaManual = ''; puntoRetiro = '';
+  tipoEnvio = ''; zonaSel = null; zonaManual = ''; puntoRetiro = ''; correoProv = ''; correoLoc = ''; correoSuc = null;
   sugerenciasActuales = []; sugIndex = -1;
   medioPago = ''; codigoAplicado = ''; codigoError = '';
   document.querySelectorAll('.envio-opcion').forEach(b => b.classList.remove('activa'));
