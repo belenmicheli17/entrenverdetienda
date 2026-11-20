@@ -1263,6 +1263,15 @@
     background: rgba(31, 61, 43, 0.88); color: #fff;
     font-size: 0.78rem; line-height: 1.35; text-align: center; padding: 8px 12px;
   }
+  /* Celu: la leyenda va debajo de la foto (no encima) y la foto tiene más alto */
+  @media (max-width: 699px) {
+    .modal-foto-wrap { flex-direction: column; flex-shrink: 0; padding-top: 8px; }
+    .modal-foto { max-height: 340px; }
+    .leyenda-alcohol { position: static; width: 100%; }
+    /* El cartel OFERTA se apoya en el borde del botón para no cortarse */
+    .variante-btn { position: relative; }
+    .variante-btn .badge-oferta { position: absolute; top: -7px; right: 10px; font-size: 0.55rem; line-height: 1.4; }
+  }
   .edad-box {
     display: flex; align-items: center; gap: 10px; cursor: pointer;
     padding: 10px 12px; border: 1.5px solid var(--borde); border-radius: 10px; background: var(--blanco);
