@@ -1108,6 +1108,59 @@
 
   .seccion { margin-bottom: 32px; }
 
+  /* ── NOVEDADES: carrusel infinito arriba de todo ── */
+  .novedades {
+    --n: 2; --gap: 12px;
+    position: relative;
+    background: var(--verde);
+    background-image: radial-gradient(circle at 100% 0%, rgba(201,168,76,0.22), transparent 55%);
+    border-radius: 20px;
+    overflow: hidden;
+    padding: 20px 0 22px;
+    margin-bottom: 32px;
+  }
+  @media (min-width: 600px) { .novedades { --n: 3; --gap: 16px; padding: 24px 0 26px; } }
+  @media (min-width: 900px) { .novedades { --n: 4; --gap: 18px; } }
+  .novedades-titulo {
+    font-family: Georgia, serif; font-size: 1.5rem; font-weight: 700; color: var(--crema);
+    margin: 0 18px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .novedades-titulo::after { content: ""; flex: 0 0 40px; height: 2px; background: var(--mostaza); }
+  .nov-pista {
+    display: flex; gap: var(--gap); overflow-x: auto; padding: 4px 18px;
+    scroll-snap-type: x mandatory; scroll-padding: 0 18px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .nov-pista::-webkit-scrollbar { display: none; }
+  .nov-card {
+    flex: 0 0 calc((100% - var(--gap) * (var(--n) - 1)) / var(--n));
+    scroll-snap-align: start;
+    background: var(--blanco); border-radius: 16px; overflow: hidden; cursor: pointer;
+    display: flex; flex-direction: column;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    transition: transform 0.2s;
+  }
+  .nov-card:hover { transform: translateY(-3px); }
+  .nov-foto { position: relative; aspect-ratio: 1; background: var(--blanco); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+  .nov-foto img { width: 100%; height: 100%; object-fit: contain; padding: 14px; }
+  .nov-pill {
+    position: absolute; top: 10px; left: 10px; background: var(--mostaza); color: #fff;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; padding: 3px 9px; border-radius: 20px;
+  }
+  .nov-body { padding: 10px 12px 14px; border-top: 1px solid var(--borde); display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .nov-marca { font-size: 0.75rem; font-weight: 600; color: var(--texto-suave); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nov-nombre { font-family: Georgia, serif; font-size: 1rem; font-weight: 700; color: var(--texto); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .nov-flecha {
+    position: absolute; top: 55%; transform: translateY(-50%); z-index: 2;
+    width: 36px; height: 36px; border-radius: 50%; border: 0; cursor: pointer;
+    background: rgba(253,250,245,0.82); color: var(--verde); font-size: 1.3rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); opacity: 0.75; transition: opacity 0.2s;
+  }
+  .nov-flecha:hover { opacity: 1; }
+  .nov-flecha.izq { left: 6px; }
+  .nov-flecha.der { right: 6px; }
+
   .wa-flotante {
     position: fixed;
     bottom: 24px;
@@ -1269,10 +1322,11 @@
     text-align: center;
     padding: 14px 16px 22px;
     font-size: .78rem;
-    color: var(--texto-suave);
+    background: var(--verde);
+    color: rgba(245,240,232,0.85);
   }
-  .pie-fino a { color: var(--verde); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
-  .pie-fino a:hover { color: var(--verde-medio); }
+  .pie-fino a { color: var(--mostaza); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+  .pie-fino a:hover { color: #E0C46E; }
   @media (max-width: 899px) {
     .carrito-panel { overflow-y: auto; overscroll-behavior: contain; }
     .carrito-header { position: sticky; top: 0; z-index: 2; }
@@ -1671,8 +1725,10 @@ function renderProductos() {
 const resto      = prods.filter(p => p.mas_vendidos?.toString().toUpperCase() !== 'SI');
 
   let html = '';
+  const inicio = !busqueda && categoriaActiva === 'all';
+  if (inicio) html += htmlNovedades();
 
-  if (!busqueda && categoriaActiva === 'all' && destacados.length) {
+  if (inicio && destacados.length) {
     html += `<div class="seccion">
                 <div class="seccion-titulo">⭐ Más vendidos</div>
       <div class="grilla">${destacados.map(renderTarjeta).join('')}</div>
@@ -1693,7 +1749,93 @@ const resto      = prods.filter(p => p.mas_vendidos?.toString().toUpperCase() !=
   }
 
   document.getElementById('contenido').innerHTML = html;
+  if (inicio) iniciarNovedades();
 }
+
+// ── NOVEDADES: se marcan desde el panel (columna "novedad" en productos) ──
+// Muestra foto, marca y nombre (sin precio). Al tocar abre la ventana del producto.
+function esNovedad(p) {
+  return String(p.novedad || '').trim().toUpperCase() === 'SI' && String(p.activo || 'SI').trim().toUpperCase() !== 'NO';
+}
+function htmlNovedades() {
+  const lista = productos.filter(esNovedad);
+  if (!lista.length) return '';
+  const card = p => {
+    const emoji = EMOJI_PROD[p.id] || '📦';
+    const img = p.foto_url ? `<img src="${convertirUrlDrive(p.foto_url)}" alt="${escHtml(p.nombre)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${emoji}'))">` : emoji;
+    return `<div class="nov-card" onclick="abrirProducto(${p.id})" role="button" tabindex="0" onkeydown="if(event.key==='Enter')abrirProducto(${p.id})">
+      <div class="nov-foto">${img}<span class="nov-pill">NUEVO</span></div>
+      <div class="nov-body">
+        ${p.marca ? `<div class="nov-marca">${escHtml(p.marca)}</div>` : ''}
+        <div class="nov-nombre">${escHtml(p.nombre)}</div>
+      </div>
+    </div>`;
+  };
+  const set = lista.map(card).join('');
+  // Tres copias seguidas: el usuario siempre está en la del medio, así nunca llega al final.
+  return `<section class="novedades" id="novedades" data-n="${lista.length}">
+    <h2 class="novedades-titulo">Novedades</h2>
+    <button class="nov-flecha izq" type="button" aria-label="Anteriores" onclick="moverNovedades(-1)">‹</button>
+    <div class="nov-pista" id="novPista">${set}${set}${set}</div>
+    <button class="nov-flecha der" type="button" aria-label="Siguientes" onclick="moverNovedades(1)">›</button>
+  </section>`;
+}
+function anchoSetNov(pista) {
+  const n = Number(document.getElementById('novedades').dataset.n);
+  const cards = pista.children;
+  return cards[n].offsetLeft - cards[0].offsetLeft;
+}
+function iniciarNovedades() {
+  const pista = document.getElementById('novPista');
+  if (!pista) return;
+  const sec = document.getElementById('novedades');
+  const n = Number(sec.dataset.n);
+  sec.dataset.vis = getComputedStyle(sec).getPropertyValue('--n').trim();
+  const visibles = Number(sec.dataset.vis) || 2;
+  // Si entran todas en pantalla, no hace falta girar: queda una sola copia y sin flechas.
+  if (n <= visibles) {
+    [...pista.children].slice(n).forEach(c => c.remove());
+    sec.querySelectorAll('.nov-flecha').forEach(b => b.remove());
+    return;
+  }
+  pista.scrollLeft = anchoSetNov(pista);
+  let quieto;
+  pista.addEventListener('scroll', () => {
+    clearTimeout(quieto);
+    quieto = setTimeout(() => recentrarNov(pista), 120);
+    const w = anchoSetNov(pista);
+    if (pista.scrollLeft < 4 || pista.scrollLeft > pista.scrollWidth - pista.clientWidth - 4) recentrarNov(pista, w);
+  }, { passive: true });
+}
+function recentrarNov(pista, w) {
+  w = w || anchoSetNov(pista);
+  const sl = pista.scrollLeft;
+  let nuevo = sl;
+  if (sl < w * 0.5) nuevo = sl + w;
+  else if (sl >= w * 1.5) nuevo = sl - w;
+  if (nuevo !== sl) {
+    pista.style.scrollSnapType = 'none';
+    pista.scrollTo({ left: nuevo, behavior: 'instant' });
+    requestAnimationFrame(() => { pista.style.scrollSnapType = ''; });
+  }
+}
+function moverNovedades(dir) {
+  const pista = document.getElementById('novPista');
+  if (!pista) return;
+  const paso = pista.children[1].offsetLeft - pista.children[0].offsetLeft;
+  pista.scrollBy({ left: dir * paso, behavior: 'smooth' });
+}
+let novResize;
+window.addEventListener('resize', () => {
+  clearTimeout(novResize);
+  novResize = setTimeout(() => {
+    const sec = document.getElementById('novedades');
+    if (!sec) return;
+    // Solo se rearma si cambió cuántas entran (ej. girar la tablet), no por la barra del celu.
+    const v = getComputedStyle(sec).getPropertyValue('--n').trim();
+    if (v !== sec.dataset.vis) renderProductos();
+  }, 250);
+});
 
 function renderTarjeta(prod) {
   const vars = variantes.filter(v => String(v.producto_id) === String(prod.id));
